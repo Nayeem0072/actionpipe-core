@@ -15,13 +15,33 @@ except ImportError:
     # If relative import fails, try absolute
     from src.langgraph_workflow import extract_actions
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%H:%M:%S",
-    stream=sys.stderr,
-)
+# Log file name for LangGraph process
+LOG_FILE = "output_log"
+
+# Configure logging to console (stderr) and to output_log file
+_log_format = "%(asctime)s [%(levelname)s] %(message)s"
+_log_datefmt = "%H:%M:%S"
+
+def _setup_logging():
+    """Configure root logger to write to both stderr and output_log."""
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    # Avoid duplicate handlers if main is run multiple times (e.g. in tests)
+    if root.handlers:
+        return
+    formatter = logging.Formatter(_log_format, datefmt=_log_datefmt)
+    # Console
+    stderr_handler = logging.StreamHandler(sys.stderr)
+    stderr_handler.setFormatter(formatter)
+    root.addHandler(stderr_handler)
+    # File (created when process runs; full log when process is done)
+    try:
+        file_handler = logging.FileHandler(LOG_FILE, mode="w", encoding="utf-8")
+        file_handler.setFormatter(formatter)
+        root.addHandler(file_handler)
+    except OSError:
+        pass  # If we can't write output_log, continue with console only
+
 logger = logging.getLogger(__name__)
 
 
@@ -77,10 +97,12 @@ def load_transcript(input_file: str) -> str:
 
 def main():
     """CLI entry point for LangGraph action extraction."""
+    _setup_logging()
+
     # Default files
     default_input = "input_langraph.txt"
     default_output = "output_langgraph.json"
-    
+
     if len(sys.argv) < 2:
         # No arguments provided - use defaults
         input_file = default_input
@@ -110,7 +132,8 @@ def main():
         
         logger.info("Done. Extracted %d action(s).", len(actions))
         logger.info("Results saved to %s", output_file)
-        
+        logger.info("Log saved to %s", LOG_FILE)
+
     except FileNotFoundError:
         logger.error("Input file not found: %s", input_file)
         sys.exit(1)

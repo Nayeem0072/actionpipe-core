@@ -639,9 +639,17 @@ def action_finalizer_node(state: GraphState) -> GraphState:
     
     # Sort chronologically by meeting window
     finalized.sort(key=lambda a: a.meeting_window[0] if a.meeting_window else 999)
-    
-    logger.info(f"ActionFinalizer: Finalized {len(finalized)} actions")
-    
+
+    logger.info("ActionFinalizer: Finalized %d actions (source_spans, meeting_window)", len(finalized))
+    for i, act in enumerate(finalized, 1):
+        logger.info(
+            "[ACTION] #%d description=%s | source_spans=%s | meeting_window=%s",
+            i,
+            act.description,
+            act.source_spans,
+            list(act.meeting_window) if act.meeting_window else None,
+        )
+
     return {**state, "merged_actions": finalized}
 
 

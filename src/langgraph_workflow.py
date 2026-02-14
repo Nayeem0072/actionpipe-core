@@ -1,5 +1,6 @@
 """Main LangGraph workflow for action item extraction."""
 import logging
+import time
 from typing import Literal
 from langgraph.graph import StateGraph, END
 
@@ -17,6 +18,23 @@ from .langgraph_nodes import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _timed_node(fn, name: str):
+    """Wrap a node so that its execution time is logged."""
+    def wrapped(state):
+        start = time.perf_counter()
+        logger.info("[TIMING] Node %s: started", name)
+        try:
+            result = fn(state)
+            elapsed = time.perf_counter() - start
+            logger.info("[TIMING] Node %s: completed in %.2fs", name, elapsed)
+            return result
+        except Exception:
+            elapsed = time.perf_counter() - start
+            logger.exception("[TIMING] Node %s: failed after %.2fs", name, elapsed)
+            raise
+    return wrapped
 
 
 def create_action_extraction_graph():
@@ -37,15 +55,15 @@ def create_action_extraction_graph():
     # Create the graph
     workflow = StateGraph(GraphState)
     
-    # Add nodes
-    workflow.add_node("segmenter", segmenter_node)
-    workflow.add_node("relevance_gate", relevance_gate_node)
-    workflow.add_node("local_extractor", local_extractor_node)
-    workflow.add_node("evidence_normalizer", evidence_normalizer_node)
-    workflow.add_node("context_resolver", context_resolver_node)
-    workflow.add_node("global_deduplicator", global_deduplicator_node)
-    workflow.add_node("action_finalizer", action_finalizer_node)
-    workflow.add_node("increment_chunk", increment_chunk)
+    # Add nodes (wrapped with timing)
+    workflow.add_node("segmenter", _timed_node(segmenter_node, "segmenter"))
+    workflow.add_node("relevance_gate", _timed_node(relevance_gate_node, "relevance_gate"))
+    workflow.add_node("local_extractor", _timed_node(local_extractor_node, "local_extractor"))
+    workflow.add_node("evidence_normalizer", _timed_node(evidence_normalizer_node, "evidence_normalizer"))
+    workflow.add_node("context_resolver", _timed_node(context_resolver_node, "context_resolver"))
+    workflow.add_node("global_deduplicator", _timed_node(global_deduplicator_node, "global_deduplicator"))
+    workflow.add_node("action_finalizer", _timed_node(action_finalizer_node, "action_finalizer"))
+    workflow.add_node("increment_chunk", _timed_node(increment_chunk, "increment_chunk"))
     
     # Set entry point
     workflow.set_entry_point("segmenter")
