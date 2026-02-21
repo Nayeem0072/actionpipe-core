@@ -28,11 +28,11 @@ def _timed_node(fn, name: str):
         try:
             result = fn(state)
             elapsed = time.perf_counter() - start
-            logger.info("[TIMING] Node %s: completed in %.2fs", name, elapsed)
+            logger.info("\033[31m[TIMING] Node %s: completed in %.2fs\033[0m", name, elapsed)
             return result
         except Exception:
             elapsed = time.perf_counter() - start
-            logger.exception("[TIMING] Node %s: failed after %.2fs", name, elapsed)
+            logger.exception("\033[31m[TIMING] Node %s: failed after %.2fs\033[0m", name, elapsed)
             raise
     return wrapped
 

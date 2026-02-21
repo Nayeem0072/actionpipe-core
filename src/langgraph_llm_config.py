@@ -33,6 +33,7 @@ RELEVANCE_GATE_MAX_TOKENS = int(os.getenv("RELEVANCE_GATE_MAX_TOKENS", "100"))  
 RELEVANCE_GATE_TOP_P = float(os.getenv("RELEVANCE_GATE_TOP_P", "0.15"))
 RELEVANCE_GATE_REPEAT_PENALTY = float(os.getenv("RELEVANCE_GATE_REPEAT_PENALTY", "1.2"))
 RELEVANCE_GATE_PRESENCE_PENALTY = float(os.getenv("RELEVANCE_GATE_PRESENCE_PENALTY", "0.6"))
+RELEVANCE_GATE_TIMEOUT = float(os.getenv("RELEVANCE_GATE_TIMEOUT", "60"))  # seconds; avoid indefinite hang
 
 
 # ============================================================================
@@ -49,6 +50,7 @@ LOCAL_EXTRACTOR_MAX_TOKENS = int(os.getenv("LOCAL_EXTRACTOR_MAX_TOKENS", "2000")
 LOCAL_EXTRACTOR_TOP_P = float(os.getenv("LOCAL_EXTRACTOR_TOP_P", "0.15"))
 LOCAL_EXTRACTOR_REPEAT_PENALTY = float(os.getenv("LOCAL_EXTRACTOR_REPEAT_PENALTY", "1.2"))
 LOCAL_EXTRACTOR_PRESENCE_PENALTY = float(os.getenv("LOCAL_EXTRACTOR_PRESENCE_PENALTY", "0.6"))
+LOCAL_EXTRACTOR_TIMEOUT = float(os.getenv("LOCAL_EXTRACTOR_TIMEOUT", "120"))
 
 
 # ============================================================================
@@ -65,6 +67,11 @@ CONTEXT_RESOLVER_MAX_TOKENS = int(os.getenv("CONTEXT_RESOLVER_MAX_TOKENS", "2000
 CONTEXT_RESOLVER_TOP_P = float(os.getenv("CONTEXT_RESOLVER_TOP_P", "0.2"))  # Slightly higher for creative linking
 CONTEXT_RESOLVER_REPEAT_PENALTY = float(os.getenv("CONTEXT_RESOLVER_REPEAT_PENALTY", "1.2"))
 CONTEXT_RESOLVER_PRESENCE_PENALTY = float(os.getenv("CONTEXT_RESOLVER_PRESENCE_PENALTY", "0.6"))
+CONTEXT_RESOLVER_TIMEOUT = float(os.getenv("CONTEXT_RESOLVER_TIMEOUT", "180"))  # seconds; avoid long hangs on large prompts
+# Skip LLM when segment count exceeds this (avoids timeouts on large chunks; use fallback only)
+CONTEXT_RESOLVER_MAX_SEGMENTS_FOR_LLM = int(os.getenv("CONTEXT_RESOLVER_MAX_SEGMENTS_FOR_LLM", "8"))
+# Max previous actions to include in context (large values = big prompt = timeouts on local models)
+CONTEXT_RESOLVER_MAX_PREVIOUS_ACTIONS = int(os.getenv("CONTEXT_RESOLVER_MAX_PREVIOUS_ACTIONS", "5"))
 
 
 # ============================================================================
@@ -80,6 +87,7 @@ RELEVANCE_GATE_CONFIG = {
     "top_p": RELEVANCE_GATE_TOP_P,
     "repeat_penalty": RELEVANCE_GATE_REPEAT_PENALTY,
     "presence_penalty": RELEVANCE_GATE_PRESENCE_PENALTY,
+    "timeout": RELEVANCE_GATE_TIMEOUT,
 }
 
 LOCAL_EXTRACTOR_CONFIG = {
@@ -91,6 +99,7 @@ LOCAL_EXTRACTOR_CONFIG = {
     "top_p": LOCAL_EXTRACTOR_TOP_P,
     "repeat_penalty": LOCAL_EXTRACTOR_REPEAT_PENALTY,
     "presence_penalty": LOCAL_EXTRACTOR_PRESENCE_PENALTY,
+    "timeout": LOCAL_EXTRACTOR_TIMEOUT,
 }
 
 CONTEXT_RESOLVER_CONFIG = {
@@ -102,4 +111,7 @@ CONTEXT_RESOLVER_CONFIG = {
     "top_p": CONTEXT_RESOLVER_TOP_P,
     "repeat_penalty": CONTEXT_RESOLVER_REPEAT_PENALTY,
     "presence_penalty": CONTEXT_RESOLVER_PRESENCE_PENALTY,
+    "timeout": CONTEXT_RESOLVER_TIMEOUT,
+    "max_segments_for_llm": CONTEXT_RESOLVER_MAX_SEGMENTS_FOR_LLM,
+    "max_previous_actions": CONTEXT_RESOLVER_MAX_PREVIOUS_ACTIONS,
 }

@@ -34,6 +34,7 @@ def create_relevance_gate_llm():
         temperature=cfg["temperature"],
         max_tokens=cfg["max_tokens"],
         extra_body=extra_body,
+        timeout=cfg.get("timeout", 60),
     )
 
 
@@ -52,17 +53,21 @@ def create_local_extractor_llm():
         temperature=cfg["temperature"],
         max_tokens=cfg["max_tokens"],
         extra_body=extra_body,
+        timeout=cfg.get("timeout", 120),
     )
 
 
 def create_context_resolver_llm():
     """Create LLM configured for context resolver node."""
+    import httpx
     cfg = CONTEXT_RESOLVER_CONFIG
+    timeout_sec = cfg.get("timeout", 120)
     extra_body = {
         "top_p": cfg["top_p"],
         "repeat_penalty": cfg["repeat_penalty"],
         "presence_penalty": cfg["presence_penalty"],
     }
+    # Explicit read timeout. max_retries=0 so one timeout fails after timeout_sec, not 3x (e.g. 360s).
     return ChatOpenAI(
         base_url=cfg["api_url"],
         api_key=cfg["api_key"] or "not-needed",
@@ -70,6 +75,8 @@ def create_context_resolver_llm():
         temperature=cfg["temperature"],
         max_tokens=cfg["max_tokens"],
         extra_body=extra_body,
+        timeout=httpx.Timeout(timeout_sec),
+        max_retries=0,
     )
 
 
@@ -99,10 +106,12 @@ def segmenter_node(state: GraphState) -> GraphState:
     logger.info(f"Segmenter: Found {len(turns)} speaker turns")
     
     # Group into chunks of 8-15 turns
-    chunk_size = 12  # Target size
+    chunk_size = 8  # Target size
     chunks = []
     for i in range(0, len(turns), chunk_size):
         chunk = "\n\n".join(turns[i:i+chunk_size])
+        logger.info(f"Segmenter: Chunk index: {i}, length: {len(chunk)}")
+        logger.info(f"Segmenter: Chunk text: {chunk}")
         chunks.append(chunk)
     
     logger.info(f"Segmenter: Created {len(chunks)} chunks")
@@ -319,6 +328,14 @@ def evidence_normalizer_node(state: GraphState) -> GraphState:
     return {**state, "candidate_segments": normalized_segments}
 
 
+# Max segments per chunk for which we call the context-resolver LLM (configurable in langgraph_llm_config).
+# With more segments, the prompt and expected JSON are large; local models (e.g. Ollama)
+# often time out or run very slow, so we skip the LLM and use the fallback (actions from
+# action_item segments only, no cross-chunk linking).
+def _get_context_resolver_max_segments():
+    return CONTEXT_RESOLVER_CONFIG.get("max_segments_for_llm", 8)
+
+
 def context_resolver_node(state: GraphState) -> GraphState:
     """
     [5] CONTEXT RESOLVER NODE (CORE INTELLIGENCE)
@@ -334,30 +351,149 @@ def context_resolver_node(state: GraphState) -> GraphState:
     active_topics = state.get("active_topics", {})
     merged_actions = state.get("merged_actions", [])
     chunk_index = state.get("chunk_index", 0)
-    
+
     logger.info(f"ContextResolver: Resolving context for {len(candidate_segments)} new segments")
     logger.info(f"ContextResolver: {len(unresolved_references)} unresolved references, {len(active_topics)} active topics")
-    
-    # Use LLM for intelligent context resolution
+
+    max_segments = _get_context_resolver_max_segments()
+    # Skip LLM when segment count is high: prompt + structured JSON output become large,
+    # and local models often time out or take many minutes (e.g. chunk 2 with 12 segments).
+    if len(candidate_segments) > max_segments:
+        logger.info(
+            "ContextResolver: Skipping LLM (segment count %d > %d); using fallback to avoid timeout.",
+            len(candidate_segments),
+            max_segments,
+        )
+        result = {
+            "resolved_segments": [seg.model_dump() for seg in candidate_segments],
+            "new_actions": [],
+            "updated_actions": [],
+            "still_unresolved": [],
+        }
+    else:
+        result = _context_resolver_llm_call(
+            candidate_segments,
+            unresolved_references,
+            active_topics,
+            merged_actions,
+            chunk_index,
+        )
+
+    # Normalize: Pydantic model has no .get(); convert to dict for uniform access
+    if hasattr(result, "model_dump"):
+        result = result.model_dump()
+    result = dict(result)  # ensure we have a dict
+
+    # Process resolved segments - use all candidate segments for now
+    resolved_segments = candidate_segments.copy()
+
+    # Create new actions from action_item segments
+    for seg in candidate_segments:
+        if seg.intent == "action_item" and seg.action_details:
+            existing_span_ids = {span for action in merged_actions for span in action.source_spans}
+            if seg.span_id in existing_span_ids:
+                continue
+            action = Action(
+                description=seg.action_details.description or seg.text,
+                assignee=seg.action_details.assignee or seg.speaker,
+                deadline=seg.action_details.deadline,
+                speaker=seg.speaker,
+                verb=seg.raw_verb or "do",
+                object_text=None,
+                confidence=seg.action_details.confidence or 0.7,
+                source_spans=[seg.span_id],
+                meeting_window=(chunk_index, chunk_index),
+            )
+            merged_actions.append(action)
+
+    # Update existing actions
+    for update_data in result.get("updated_actions", []):
+        if not isinstance(update_data, dict):
+            continue
+        idx = update_data.get("index", -1)
+        if 0 <= idx < len(merged_actions):
+            if "deadline" in update_data:
+                merged_actions[idx].deadline = update_data["deadline"]
+            if "assignee" in update_data:
+                merged_actions[idx].assignee = update_data["assignee"]
+
+    # Track still unresolved
+    still_unresolved = []
+    for unresolved_data in result.get("still_unresolved", []):
+        if not isinstance(unresolved_data, dict):
+            continue
+        for seg in candidate_segments:
+            if seg.text == unresolved_data.get("text"):
+                still_unresolved.append(seg)
+                break
+
+    # Update unresolved references
+    new_unresolved = [ref for ref in unresolved_references if ref not in resolved_segments]
+    new_unresolved.extend(still_unresolved)
+
+    # Update active topics
+    for seg in candidate_segments:
+        if seg.intent in ["decision", "action_item"]:
+            topic_key = seg.text[:50]
+            active_topics[topic_key] = {
+                "speaker": seg.speaker,
+                "chunk": chunk_index,
+                "resolved": seg.intent == "action_item",
+            }
+
+    new_actions_count = len([a for a in merged_actions if a.meeting_window and a.meeting_window[0] == chunk_index])
+    logger.info(f"ContextResolver: Created {new_actions_count} new actions from this chunk")
+    logger.info(f"ContextResolver: {len(new_unresolved)} unresolved references remaining")
+
+    return {
+        **state,
+        "candidate_segments": resolved_segments,
+        "unresolved_references": new_unresolved,
+        "active_topics": active_topics,
+        "merged_actions": merged_actions,
+    }
+
+
+def _context_resolver_llm_call(
+    candidate_segments: list,
+    unresolved_references: list,
+    active_topics: dict,
+    merged_actions: list,
+    chunk_index: int,
+) -> dict:
+    """Call the LLM for context resolution. Returns dict or Pydantic model."""
     llm = create_context_resolver_llm()
     
-    # Prepare context for resolution
+    # Keep prompt small: local models time out on large context (e.g. chunk 8 with many
+    # accumulated actions). Use last N actions and last N topics only.
+    _max_prev_actions = CONTEXT_RESOLVER_CONFIG.get("max_previous_actions", 5)
+    _max_topics = 3
+    _max_unresolved = 3
+
     context_text = ""
     if unresolved_references:
         context_text += "Unresolved references:\n"
-        for ref in unresolved_references[-5:]:  # Last 5 unresolved
+        for ref in unresolved_references[-_max_unresolved:]:
             context_text += f"- {ref.speaker}: {ref.text}\n"
-    
     if active_topics:
         context_text += "\nActive topics:\n"
-        for topic, info in list(active_topics.items())[-5:]:
+        for topic, info in list(active_topics.items())[-_max_topics:]:
             context_text += f"- {topic}: {info}\n"
-    
+
     new_segments_text = "\n".join([
         f"{seg.speaker}: {seg.text} [{seg.intent}]"
         for seg in candidate_segments
     ])
-    
+
+    _actions_to_show = merged_actions[-_max_prev_actions:] if len(merged_actions) > _max_prev_actions else merged_actions
+    _start_idx = len(merged_actions) - len(_actions_to_show)
+    previous_actions_text = "\n".join([
+        f"{_start_idx + i}. {act.description} (assignee: {act.assignee}, deadline: {act.deadline})"
+        for i, act in enumerate(_actions_to_show)
+    ])
+    if len(merged_actions) > _max_prev_actions:
+        previous_actions_text = f"(... {len(merged_actions) - _max_prev_actions} earlier omitted)\n" + previous_actions_text
+
     prompt = ChatPromptTemplate.from_messages([
         ("system", """You are resolving references and linking actions across meeting chunks.
 
@@ -373,12 +509,12 @@ For each new segment, determine:
 - Does it add deadline/assignee info to existing actions?
 
 Return JSON with:
-{
-  "resolved_segments": [...],  // Segments with completed references
-  "new_actions": [...],  // New actions to create
-  "updated_actions": [...],  // Actions to update (by index)
-  "still_unresolved": [...]  // Segments that remain unresolved
-}"""),
+{{
+  "resolved_segments": [...],
+  "new_actions": [...],
+  "updated_actions": [...],
+  "still_unresolved": [...]
+}}"""),
         ("human", """Context:
 {context}
 
@@ -388,23 +524,55 @@ New segments from current chunk:
 Previous actions:
 {previous_actions}"""),
     ])
-    
-    previous_actions_text = "\n".join([
-        f"{i}. {act.description} (assignee: {act.assignee}, deadline: {act.deadline})"
-        for i, act in enumerate(merged_actions)
-    ])
-    
-    from pydantic import BaseModel as PydanticBaseModel
-    
+
+    from pydantic import BaseModel as PydanticBaseModel, field_validator
+
     class ResolutionResult(PydanticBaseModel):
         resolved_segments: list[dict]
         new_actions: list[dict]
         updated_actions: list[dict]
         still_unresolved: list[dict]
-    
+
+        @field_validator("still_unresolved", mode="before")
+        @classmethod
+        def still_unresolved_to_dicts(cls, v: list) -> list:
+            """Accept list of dicts or list of strings; normalize to list of dicts with 'text'."""
+            if not isinstance(v, list):
+                return v
+            out = []
+            for item in v:
+                if isinstance(item, str):
+                    out.append({"text": item})
+                elif isinstance(item, dict):
+                    out.append(item)
+            return out
+
     structured_llm = llm.with_structured_output(ResolutionResult, method="json_mode")
     chain = prompt | structured_llm
-    
+
+    timeout_sec = CONTEXT_RESOLVER_CONFIG.get("timeout", 120)
+    approx_prompt_chars = len(context_text) + len(new_segments_text) + len(previous_actions_text or "")
+    logger.info(
+        "ContextResolver: Calling LLM (timeout=%ds, prompt ~%d chars, %d previous actions)...",
+        int(timeout_sec),
+        approx_prompt_chars,
+        len(_actions_to_show),
+    )
+
+    # Log full prompt so it can be copied and tried manually in Ollama if stuck
+    try:
+        formatted_messages = prompt.invoke({
+            "context": context_text,
+            "new_segments": new_segments_text,
+            "previous_actions": previous_actions_text or "None",
+        })
+        for i, msg in enumerate(formatted_messages):
+            role = getattr(msg, "type", "message")
+            content = getattr(msg, "content", str(msg))
+            logger.info("[CONTEXT_RESOLVER_PROMPT] --- Part %d (%s) ---\n%s", i + 1, role, content)
+    except Exception as _e:
+        logger.debug("Could not log full prompt: %s", _e)
+
     try:
         result = chain.invoke({
             "context": context_text,
@@ -413,81 +581,13 @@ Previous actions:
         })
     except Exception as e:
         logger.warning(f"ContextResolver: LLM resolution failed: {e}, using fallback")
-        # Fallback: simple heuristic resolution
         result = {
             "resolved_segments": [seg.model_dump() for seg in candidate_segments],
             "new_actions": [],
             "updated_actions": [],
             "still_unresolved": [],
         }
-    
-    # Process resolved segments - use all candidate segments for now
-    # (LLM resolution can enhance them later)
-    resolved_segments = candidate_segments.copy()
-    
-    # Create new actions from action_item segments
-    for seg in candidate_segments:
-        if seg.intent == "action_item" and seg.action_details:
-            # Check if this action already exists (by span_id)
-            existing_span_ids = {span for action in merged_actions for span in action.source_spans}
-            if seg.span_id in existing_span_ids:
-                continue  # Skip if already processed
-            
-            action = Action(
-                description=seg.action_details.description or seg.text,
-                assignee=seg.action_details.assignee or seg.speaker,
-                deadline=seg.action_details.deadline,
-                speaker=seg.speaker,
-                verb=seg.raw_verb or "do",
-                object_text=None,
-                confidence=seg.action_details.confidence or 0.7,
-                source_spans=[seg.span_id],
-                meeting_window=(chunk_index, chunk_index),
-            )
-            merged_actions.append(action)
-    
-    # Update existing actions
-    for update_data in result.get("updated_actions", []):
-        idx = update_data.get("index", -1)
-        if 0 <= idx < len(merged_actions):
-            if "deadline" in update_data:
-                merged_actions[idx].deadline = update_data["deadline"]
-            if "assignee" in update_data:
-                merged_actions[idx].assignee = update_data["assignee"]
-    
-    # Track still unresolved
-    still_unresolved = []
-    for unresolved_data in result.get("still_unresolved", []):
-        for seg in candidate_segments:
-            if seg.text == unresolved_data.get("text"):
-                still_unresolved.append(seg)
-                break
-    
-    # Update unresolved references (add new ones, remove resolved)
-    new_unresolved = [ref for ref in unresolved_references if ref not in resolved_segments]
-    new_unresolved.extend(still_unresolved)
-    
-    # Update active topics
-    for seg in candidate_segments:
-        if seg.intent in ["decision", "action_item"]:
-            topic_key = seg.text[:50]  # Use first 50 chars as topic key
-            active_topics[topic_key] = {
-                "speaker": seg.speaker,
-                "chunk": chunk_index,
-                "resolved": seg.intent == "action_item",
-            }
-    
-    new_actions_count = len([a for a in merged_actions if a.meeting_window and a.meeting_window[0] == chunk_index])
-    logger.info(f"ContextResolver: Created {new_actions_count} new actions from this chunk")
-    logger.info(f"ContextResolver: {len(new_unresolved)} unresolved references remaining")
-    
-    return {
-        **state,
-        "candidate_segments": resolved_segments,
-        "unresolved_references": new_unresolved,
-        "active_topics": active_topics,
-        "merged_actions": merged_actions,
-    }
+    return result
 
 
 def global_deduplicator_node(state: GraphState) -> GraphState:
