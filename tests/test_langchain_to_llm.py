@@ -9,12 +9,12 @@ import sys
 import time
 
 # Ensure project root is on path so we can import from src
-_script_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, _script_dir)
+_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, _project_root)
 
 from dotenv import load_dotenv
-# Load .env from project root (script dir) so config gets correct URL/model regardless of cwd
-load_dotenv(os.path.join(_script_dir, ".env"))
+# Load .env from project root so config gets correct URL/model regardless of cwd
+load_dotenv(os.path.join(_project_root, ".env"))
 
 from langchain_core.messages import SystemMessage, HumanMessage
 from pydantic import BaseModel as PydanticBaseModel, field_validator

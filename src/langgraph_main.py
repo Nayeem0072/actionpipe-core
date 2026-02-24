@@ -16,7 +16,7 @@ except ImportError:
     from src.langgraph_workflow import extract_actions
 
 # Log file name for LangGraph process
-LOG_FILE = "output_log"
+LOG_FILE = "output_log.txt"
 
 # Configure logging to console (stderr) and to output_log file
 _log_format = "%(asctime)s [%(levelname)s] %(message)s"
@@ -100,8 +100,8 @@ def main():
     _setup_logging()
 
     # Default files
-    default_input = "input_langraph.txt"
-    default_output = "output_langgraph.json"
+    default_input = "input.txt"
+    default_output = "output.json"
 
     if len(sys.argv) < 2:
         # No arguments provided - use defaults
