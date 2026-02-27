@@ -1,0 +1,64 @@
+John: hey everyone can you hear me ok
+Sara: yeah yeah loud and clear i think mike is still joining
+Mike: hello sorry sorry wifi was doing the the thing again
+Priya: we can hear you mike
+John: cool cool alright so uh hows everyone doing today
+Sara: tired honestly too many back to back calls
+Priya: same here its been a week and its only wednesday
+Mike: haha yeah time is fake
+John: ok so main thing today is the phoenix project timeline and also client delta feedback
+Sara: oh yeah that email was kind of concerning
+Priya: which part the budget or the scope creep part
+Sara: mostly the scope part like they added analytics dashboard out of nowhere
+John: right so first timeline um where are we with backend api work
+Mike: so the auth service is done mostly except the refresh token logic which broke yesterday but i fixed i think
+Priya: did you push that or is it still local
+Mike: uh pushed but the tests are red but like not real red just flaky red
+Sara: wait flaky red is still red mike
+Mike: yeah but like emotionally green
+John: ok ok lets circle back to tests later
+Priya: writing that down
+Priya: timeline wise backend how long mike
+Mike: if no more surprise fires maybe 10 days dev plus testing time which is theoretical
+Sara: frontend i need like a week after api stabilizes
+John: ok so roughly end of month internal
+Priya: client wont like that
+John: yeah but reality
+Sara: should we send them an update email today
+John: yes good point we need to reset expectations
+Mike: who sends that i sent the last one and they ghosted
+Sara: maybe better from john this time
+John: ok ill draft it after this
+Priya: can you include the phased delivery plan
+John: yep
+Sara: and mention scope change impact
+John: yes
+Mike: also can we schedule a bug bash session before release
+Sara: oh yeah thats useful
+John: ok add bug bash maybe march 10
+Priya: march 10 what time
+John: afternoon maybe 2 pm
+Sara: works
+Mike: works
+Priya: ok
+John: next topic infrastructure cost spike
+Mike: yeah sorry about that logs went into infinite mode
+Sara: infinite mode sounds expensive
+Mike: it was spiritually infinite
+John: did we fix it
+Mike: yeah log level back to normal we were in debug in prod which is not ideal
+Priya: understatement
+Sara: do we need to inform finance
+John: probably ill talk to them
+Mike: also monitoring alerts didnt fire which is concerning
+Priya: we should create a task for fixing alert rules
+Sara: agreed
+John: priya can you track that
+Priya: yes adding to list
+Sara: small question are we still doing the accessibility review
+John: oh good point we skipped last sprint
+Mike: yeah sorry i was supposed to check color contrast thing
+Sara: lets not forget that the client mentioned it in kickoff
+John: ok add accessibility review to phase one
+Priya: noted
+

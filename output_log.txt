@@ -1,14 +1,14 @@
-23:06:00 [INFO] Loading input file: input_small.txt
-23:06:00 [INFO] Reading transcript from plain text file: input_small.txt
-23:06:00 [INFO] Input loaded (3893 characters). Starting LangGraph extraction.
-23:06:00 [INFO] Starting action extraction workflow...
-23:06:00 [INFO] LangGraph workflow created successfully
-23:06:00 [INFO] Executing graph workflow...
-23:06:00 [INFO] [TIMING] Node segmenter: started
-23:06:00 [INFO] Segmenter: Starting chunking...
-23:06:00 [INFO] Segmenter: Found 99 speaker turns
-23:06:00 [INFO] Segmenter: Chunk index: 0, length: 382
-23:06:00 [INFO] Segmenter: Chunk text: John: hey everyone can you hear me ok
+22:18:35 [INFO] Loading input file: input_very_small.txt
+22:18:35 [INFO] Reading transcript from plain text file: input_very_small.txt
+22:18:35 [INFO] Input loaded (2760 characters). Starting LangGraph extraction.
+22:18:35 [INFO] Starting action extraction workflow...
+22:18:35 [INFO] LangGraph workflow created successfully
+22:18:35 [INFO] Executing graph workflow...
+22:18:35 [INFO] [TIMING] Node segmenter: started
+22:18:35 [INFO] Segmenter: Starting chunking...
+22:18:35 [INFO] Segmenter: Found 63 speaker turns
+22:18:35 [INFO] Segmenter: Chunk index: 0, length: 382
+22:18:35 [INFO] Segmenter: Chunk text: John: hey everyone can you hear me ok
 
 Sara: yeah yeah loud and clear i think mike is still joining
 
@@ -23,8 +23,8 @@ Sara: tired honestly too many back to back calls
 Priya: same here its been a week and its only wednesday
 
 Mike: haha yeah time is fake
-23:06:00 [INFO] Segmenter: Chunk index: 8, length: 581
-23:06:00 [INFO] Segmenter: Chunk text: John: ok so main thing today is the phoenix project timeline and also client delta feedback
+22:18:35 [INFO] Segmenter: Chunk index: 8, length: 581
+22:18:35 [INFO] Segmenter: Chunk text: John: ok so main thing today is the phoenix project timeline and also client delta feedback
 
 Sara: oh yeah that email was kind of concerning
 
@@ -39,8 +39,8 @@ Mike: so the auth service is done mostly except the refresh token logic which br
 Priya: did you push that or is it still local
 
 Mike: uh pushed but the tests are red but like not real red just flaky red
-23:06:00 [INFO] Segmenter: Chunk index: 16, length: 381
-23:06:00 [INFO] Segmenter: Chunk text: Sara: wait flaky red is still red mike
+22:18:35 [INFO] Segmenter: Chunk index: 16, length: 381
+22:18:35 [INFO] Segmenter: Chunk text: Sara: wait flaky red is still red mike
 
 Mike: yeah but like emotionally green
 
@@ -55,8 +55,8 @@ Mike: if no more surprise fires maybe 10 days dev plus testing time which is the
 Sara: frontend i need like a week after api stabilizes
 
 John: ok so roughly end of month internal
-23:06:00 [INFO] Segmenter: Chunk index: 24, length: 335
-23:06:00 [INFO] Segmenter: Chunk text: Priya: client wont like that
+22:18:35 [INFO] Segmenter: Chunk index: 24, length: 335
+22:18:35 [INFO] Segmenter: Chunk text: Priya: client wont like that
 
 John: yeah but reality
 
@@ -71,8 +71,8 @@ Sara: maybe better from john this time
 John: ok ill draft it after this
 
 Priya: can you include the phased delivery plan
-23:06:00 [INFO] Segmenter: Chunk index: 32, length: 242
-23:06:00 [INFO] Segmenter: Chunk text: John: yep
+22:18:35 [INFO] Segmenter: Chunk index: 32, length: 242
+22:18:35 [INFO] Segmenter: Chunk text: John: yep
 
 Sara: and mention scope change impact
 
@@ -87,8 +87,8 @@ John: ok add bug bash maybe march 10
 Priya: march 10 what time
 
 John: afternoon maybe 2 pm
-23:06:00 [INFO] Segmenter: Chunk index: 40, length: 231
-23:06:00 [INFO] Segmenter: Chunk text: Sara: works
+22:18:35 [INFO] Segmenter: Chunk index: 40, length: 231
+22:18:35 [INFO] Segmenter: Chunk text: Sara: works
 
 Mike: works
 
@@ -103,8 +103,8 @@ Sara: infinite mode sounds expensive
 Mike: it was spiritually infinite
 
 John: did we fix it
-23:06:00 [INFO] Segmenter: Chunk index: 48, length: 333
-23:06:00 [INFO] Segmenter: Chunk text: Mike: yeah log level back to normal we were in debug in prod which is not ideal
+22:18:35 [INFO] Segmenter: Chunk index: 48, length: 333
+22:18:35 [INFO] Segmenter: Chunk text: Mike: yeah log level back to normal we were in debug in prod which is not ideal
 
 Priya: understatement
 
@@ -119,8 +119,8 @@ Priya: we should create a task for fixing alert rules
 Sara: agreed
 
 John: priya can you track that
-23:06:00 [INFO] Segmenter: Chunk index: 56, length: 390
-23:06:00 [INFO] Segmenter: Chunk text: Priya: yes adding to list
+22:18:35 [INFO] Segmenter: Chunk index: 56, length: 323
+22:18:35 [INFO] Segmenter: Chunk text: Priya: yes adding to list
 
 Sara: small question are we still doing the accessibility review
 
@@ -133,459 +133,226 @@ Sara: lets not forget that the client mentioned it in kickoff
 John: ok add accessibility review to phase one
 
 Priya: noted
-
-Mike: sorry one second my screen just went black no wait its back
-23:06:00 [INFO] Segmenter: Chunk index: 64, length: 260
-23:06:00 [INFO] Segmenter: Chunk text: Sara: ASR tools are gonna hate this meeting
-
-John: haha
-
-Priya: do we have owner for documentation
-
-Sara: oh shoot not really
-
-Mike: docs are a social construct
-
-John: sara can you own user guide draft
-
-Sara: yeah okay but need inputs from you both
-
-Mike: sure
-23:06:00 [INFO] Segmenter: Chunk index: 72, length: 252
-23:06:00 [INFO] Segmenter: Chunk text: Priya: we also need release checklist
-
-John: right
-
-Sara: coffee break when
-
-Mike: now
-
-John: focus mike
-
-Sara: sorry someone said something about a banana earlier or was that another meeting
-
-Priya: i think that was grocery delivery
-
-Mike: yeah ignore
-23:06:00 [INFO] Segmenter: Chunk index: 80, length: 342
-23:06:00 [INFO] Segmenter: Chunk text: John: okay wrapping up action recap um wait did we talk about security review
-
-Sara: oh no
-
-Mike: oh no squared
-
-John: we need at least internal review
-
-Priya: ill check with security team
-
-Mike: also backup strategy for database i dont remember if we tested restore
-
-Sara: that sentence made me anxious
-
-John: yeah lets schedule test restore
-23:06:00 [INFO] Segmenter: Chunk index: 88, length: 206
-23:06:00 [INFO] Segmenter: Chunk text: Priya: adding
-
-Mike: sorry audio glitching robotic voice mode
-
-Sara: sounds like a transformer
-
-John: okay anything else
-
-Sara: nope
-
-Mike: all good
-
-Priya: done
-
-John: alright thanks everyone talk tomorrow
-23:06:00 [INFO] Segmenter: Chunk index: 96, length: 32
-23:06:00 [INFO] Segmenter: Chunk text: Sara: bye
-
-Mike: bye
-
-Priya: bye
-23:06:00 [INFO] Segmenter: Created 13 chunks
-23:06:00 [INFO] [31m[TIMING] Node segmenter: completed in 0.00s[0m
-23:06:00 [INFO] [TIMING] Node relevance_gate: started
-23:06:00 [INFO] RelevanceGate: Checking chunk 1/13
-23:06:13 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:06:13 [INFO] RelevanceGate: Chunk 1 -> NO
-23:06:13 [INFO] [31m[TIMING] Node relevance_gate: completed in 13.38s[0m
-23:06:13 [INFO] [TIMING] Node increment_chunk: started
-23:06:13 [INFO] IncrementChunk: Moving to chunk 2
-23:06:13 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
-23:06:13 [INFO] [TIMING] Node relevance_gate: started
-23:06:13 [INFO] RelevanceGate: Checking chunk 2/13
-23:06:26 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:06:26 [INFO] RelevanceGate: Chunk 2 -> YES
-23:06:26 [INFO] [31m[TIMING] Node relevance_gate: completed in 12.94s[0m
-23:06:26 [INFO] [TIMING] Node local_extractor: started
-23:06:26 [INFO] LocalExtractor: Extracting from chunk 2
-23:07:26 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:07:26 [INFO] LocalExtractor: Extracted 5 segments
-23:07:26 [INFO] [31m[TIMING] Node local_extractor: completed in 60.03s[0m
-23:07:26 [INFO] [TIMING] Node evidence_normalizer: started
-23:07:26 [INFO] EvidenceNormalizer: Normalizing 5 segments
-23:07:26 [INFO] EvidenceNormalizer: 5 segments after normalization
-23:07:26 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
-23:07:26 [INFO] [TIMING] Node context_resolver: started
-23:07:26 [INFO] ContextResolver: Resolving context for 5 new segments
-23:07:26 [INFO] ContextResolver: 0 unresolved references, 0 active topics
-23:07:26 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~464 chars, 0 previous actions)...
-23:07:26 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
-('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content='Context:\n\n\nNew segments from current chunk:\nJohn: ok so main thing today is the phoenix project timeline and also client delta feedback [information]\nSara: oh yeah that email was kind of concerning [information]\nSara: mostly the scope part they added analytics dashboard out of nowhere [information]\nMike: so the auth service is done mostly except the refresh token logic which broke yesterday but i fixed i think [information]\nMike: pushed but the tests are red but not real red just flaky red [information]\n\nPrevious actions:\nNone', additional_kwargs={}, response_metadata={})])
-23:07:49 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:07:49 [INFO] ContextResolver: Created 0 new actions from this chunk
-23:07:49 [INFO] ContextResolver: 0 unresolved references remaining
-23:07:49 [INFO] [31m[TIMING] Node context_resolver: completed in 22.76s[0m
-23:07:49 [INFO] [TIMING] Node increment_chunk: started
-23:07:49 [INFO] IncrementChunk: Moving to chunk 3
-23:07:49 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
-23:07:49 [INFO] [TIMING] Node relevance_gate: started
-23:07:49 [INFO] RelevanceGate: Checking chunk 3/13
-23:08:01 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:08:01 [INFO] RelevanceGate: Chunk 3 -> YES
-23:08:01 [INFO] [31m[TIMING] Node relevance_gate: completed in 12.05s[0m
-23:08:01 [INFO] [TIMING] Node local_extractor: started
-23:08:01 [INFO] LocalExtractor: Extracting from chunk 3
-23:08:40 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:08:40 [INFO] LocalExtractor: Extracted 8 segments
-23:08:40 [INFO] [31m[TIMING] Node local_extractor: completed in 39.51s[0m
-23:08:40 [INFO] [TIMING] Node evidence_normalizer: started
-23:08:40 [INFO] EvidenceNormalizer: Normalizing 8 segments
-23:08:40 [INFO] EvidenceNormalizer: 7 segments after normalization
-23:08:40 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
-23:08:40 [INFO] [TIMING] Node context_resolver: started
-23:08:40 [INFO] ContextResolver: Resolving context for 7 new segments
-23:08:40 [INFO] ContextResolver: 0 unresolved references, 0 active topics
-23:08:40 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~432 chars, 0 previous actions)...
-23:08:40 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
-('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content='Context:\n\n\nNew segments from current chunk:\nSara: wait flaky red is still red mike [clarification]\nMike: yeah but emotionally green [information]\nJohn: ok ok lets circle back to tests later [suggestion]\nPriya: timeline wise backend how long mike [question]\nMike: if no more surprise fires maybe 10 days dev plus testing time which is theoretical [information]\nSara: frontend i need a week after api stabilizes [information]\nJohn: ok so roughly end of month internal [decision]\n\nPrevious actions:\nNone', additional_kwargs={}, response_metadata={})])
-23:09:25 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:09:25 [INFO] ContextResolver: Created 0 new actions from this chunk
-23:09:25 [INFO] ContextResolver: 0 unresolved references remaining
-23:09:25 [INFO] [31m[TIMING] Node context_resolver: completed in 44.41s[0m
-23:09:25 [INFO] [TIMING] Node increment_chunk: started
-23:09:25 [INFO] IncrementChunk: Moving to chunk 4
-23:09:25 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
-23:09:25 [INFO] [TIMING] Node relevance_gate: started
-23:09:25 [INFO] RelevanceGate: Checking chunk 4/13
-23:09:35 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:09:35 [INFO] RelevanceGate: Chunk 4 -> YES
-23:09:35 [INFO] [31m[TIMING] Node relevance_gate: completed in 9.97s[0m
-23:09:35 [INFO] [TIMING] Node local_extractor: started
-23:09:35 [INFO] LocalExtractor: Extracting from chunk 4
-23:10:23 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:10:23 [INFO] LocalExtractor: Extracted 8 segments
-23:10:23 [INFO] [31m[TIMING] Node local_extractor: completed in 48.14s[0m
-23:10:23 [INFO] [TIMING] Node evidence_normalizer: started
-23:10:23 [INFO] EvidenceNormalizer: Normalizing 8 segments
-23:10:23 [INFO] EvidenceNormalizer: 8 segments after normalization
-23:10:23 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
-23:10:23 [INFO] [TIMING] Node context_resolver: started
-23:10:23 [INFO] ContextResolver: Resolving context for 8 new segments
-23:10:23 [INFO] ContextResolver: 0 unresolved references, 1 active topics
-23:10:23 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~534 chars, 0 previous actions)...
-23:10:23 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
-('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content="Context:\n\nActive topics:\n- ok so roughly end of month internal: {'speaker': 'John', 'chunk': 2, 'resolved': False}\n\n\nNew segments from current chunk:\nPriya: client wont that [information]\nJohn: yeah but reality [agreement]\nSara: should we send them an update email today [question]\nJohn: yes good point we need to reset expectations [decision]\nMike: who sends that i sent the last one and they ghosted [clarification]\nSara: maybe better from john this time [suggestion]\nJohn: ok ill draft it after this [action_item]\nPriya: can you include the phased delivery plan [action_item]\n\nPrevious actions:\nNone", additional_kwargs={}, response_metadata={})])
-23:13:23 [WARNING] ContextResolver: LLM resolution failed: Request timed out., using fallback
-23:13:23 [INFO] ContextResolver: Created 2 new actions from this chunk
-23:13:23 [INFO] ContextResolver: 0 unresolved references remaining
-23:13:23 [INFO] [31m[TIMING] Node context_resolver: completed in 180.06s[0m
-23:13:23 [INFO] [TIMING] Node increment_chunk: started
-23:13:23 [INFO] IncrementChunk: Moving to chunk 5
-23:13:23 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
-23:13:23 [INFO] [TIMING] Node relevance_gate: started
-23:13:23 [INFO] RelevanceGate: Checking chunk 5/13
-23:13:35 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:13:35 [INFO] RelevanceGate: Chunk 5 -> YES
-23:13:35 [INFO] [31m[TIMING] Node relevance_gate: completed in 11.90s[0m
-23:13:35 [INFO] [TIMING] Node local_extractor: started
-23:13:35 [INFO] LocalExtractor: Extracting from chunk 5
-23:14:38 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:14:38 [INFO] LocalExtractor: Extracted 4 segments
-23:14:38 [INFO] [31m[TIMING] Node local_extractor: completed in 63.71s[0m
-23:14:38 [INFO] [TIMING] Node evidence_normalizer: started
-23:14:38 [INFO] EvidenceNormalizer: Normalizing 4 segments
-23:14:38 [INFO] EvidenceNormalizer: 4 segments after normalization
-23:14:38 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
-23:14:38 [INFO] [TIMING] Node context_resolver: started
-23:14:38 [INFO] ContextResolver: Resolving context for 4 new segments
-23:14:38 [INFO] ContextResolver: 0 unresolved references, 4 active topics
-23:14:39 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~715 chars, 2 previous actions)...
-23:14:39 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
-('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content="Context:\n\nActive topics:\n- yes good point we need to reset expectations: {'speaker': 'John', 'chunk': 3, 'resolved': False}\n- ok ill draft it after this: {'speaker': 'John', 'chunk': 3, 'resolved': True}\n- can you include the phased delivery plan: {'speaker': 'Priya', 'chunk': 3, 'resolved': True}\n\n\nNew segments from current chunk:\nSara: and mention scope change impact [suggestion]\nMike: also can we schedule a bug bash session before release [suggestion]\nJohn: ok add bug bash maybe march 10 [action_item]\nJohn: afternoon maybe 2 pm [action_item]\n\nPrevious actions:\n0. Draft update email to client to reset expectations (assignee: John, deadline: after this)\n1. Include phased delivery plan in the update email to client to reset expectations (assignee: John, deadline: None)", additional_kwargs={}, response_metadata={})])
-23:15:20 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:15:20 [INFO] ContextResolver: Created 2 new actions from this chunk
-23:15:20 [INFO] ContextResolver: 0 unresolved references remaining
-23:15:20 [INFO] [31m[TIMING] Node context_resolver: completed in 41.83s[0m
-23:15:20 [INFO] [TIMING] Node increment_chunk: started
-23:15:20 [INFO] IncrementChunk: Moving to chunk 6
-23:15:20 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
-23:15:20 [INFO] [TIMING] Node relevance_gate: started
-23:15:20 [INFO] RelevanceGate: Checking chunk 6/13
-23:15:32 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:15:32 [INFO] RelevanceGate: Chunk 6 -> YES
-23:15:32 [INFO] [31m[TIMING] Node relevance_gate: completed in 11.97s[0m
-23:15:32 [INFO] [TIMING] Node local_extractor: started
-23:15:32 [INFO] LocalExtractor: Extracting from chunk 6
-23:15:59 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:15:59 [INFO] LocalExtractor: Extracted 1 segments
-23:15:59 [INFO] [31m[TIMING] Node local_extractor: completed in 26.39s[0m
-23:15:59 [INFO] [TIMING] Node evidence_normalizer: started
-23:15:59 [INFO] EvidenceNormalizer: Normalizing 1 segments
-23:15:59 [INFO] EvidenceNormalizer: 1 segments after normalization
-23:15:59 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
-23:15:59 [INFO] [TIMING] Node context_resolver: started
-23:15:59 [INFO] ContextResolver: Resolving context for 1 new segments
-23:15:59 [INFO] ContextResolver: 0 unresolved references, 6 active topics
-23:15:59 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~701 chars, 4 previous actions)...
-23:15:59 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
-('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content="Context:\n\nActive topics:\n- can you include the phased delivery plan: {'speaker': 'Priya', 'chunk': 3, 'resolved': True}\n- ok add bug bash maybe march 10: {'speaker': 'John', 'chunk': 4, 'resolved': True}\n- afternoon maybe 2 pm: {'speaker': 'John', 'chunk': 4, 'resolved': True}\n\n\nNew segments from current chunk:\nJohn: did we fix it [question]\n\nPrevious actions:\n0. Draft update email to client to reset expectations (assignee: John, deadline: after this)\n1. Include phased delivery plan in the update email to client to reset expectations (assignee: John, deadline: None)\n2. Add bug bash session to schedule for March 10 (assignee: John, deadline: march 10)\n3. Confirm bug bash session time as 2 pm in the afternoon on March 10 (assignee: John, deadline: march 10)", additional_kwargs={}, response_metadata={})])
-23:18:59 [WARNING] ContextResolver: LLM resolution failed: Request timed out., using fallback
-23:18:59 [INFO] ContextResolver: Created 0 new actions from this chunk
-23:18:59 [INFO] ContextResolver: 0 unresolved references remaining
-23:18:59 [INFO] [31m[TIMING] Node context_resolver: completed in 180.06s[0m
-23:18:59 [INFO] [TIMING] Node increment_chunk: started
-23:18:59 [INFO] IncrementChunk: Moving to chunk 7
-23:18:59 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
-23:18:59 [INFO] [TIMING] Node relevance_gate: started
-23:18:59 [INFO] RelevanceGate: Checking chunk 7/13
-23:19:11 [INFO] HTTP Request: POST http://localhost:11434/v1/chat/completions "HTTP/1.1 200 OK"
-23:19:11 [INFO] RelevanceGate: Chunk 7 -> YES
-23:19:11 [INFO] [31m[TIMING] Node relevance_gate: completed in 12.28s[0m
-23:19:11 [INFO] [TIMING] Node local_extractor: started
-23:19:11 [INFO] LocalExtractor: Extracting from chunk 7
-23:21:11 [INFO] Retrying request to /chat/completions in 0.452230 seconds
-23:23:11 [INFO] Retrying request to /chat/completions in 0.895009 seconds
-23:25:12 [ERROR] [31m[TIMING] Node local_extractor: failed after 361.39s[0m
-Traceback (most recent call last):
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
-    yield
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 250, in handle_request
-    resp = self._pool.handle_request(req)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_sync/connection_pool.py", line 256, in handle_request
-    raise exc from None
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_sync/connection_pool.py", line 236, in handle_request
-    response = connection.handle_request(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_sync/connection.py", line 103, in handle_request
-    return self._connection.handle_request(request)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_sync/http11.py", line 136, in handle_request
-    raise exc
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_sync/http11.py", line 106, in handle_request
-    ) = self._receive_response_headers(**kwargs)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_sync/http11.py", line 177, in _receive_response_headers
-    event = self._receive_event(timeout=timeout)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_sync/http11.py", line 217, in _receive_event
-    data = self._network_stream.read(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_backends/sync.py", line 126, in read
-    with map_exceptions(exc_map):
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/homebrew/anaconda3/lib/python3.12/contextlib.py", line 158, in __exit__
-    self.gen.throw(value)
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
-    raise to_exc(exc) from exc
-httpcore.ReadTimeout: timed out
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/openai/_base_client.py", line 1005, in request
-    response = self._client.send(
-               ^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_client.py", line 914, in send
-    response = self._send_handling_auth(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_client.py", line 942, in _send_handling_auth
-    response = self._send_handling_redirects(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
-    response = self._send_single_request(request)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_client.py", line 1014, in _send_single_request
-    response = transport.handle_request(request)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 249, in handle_request
-    with map_httpcore_exceptions():
-         ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/homebrew/anaconda3/lib/python3.12/contextlib.py", line 158, in __exit__
-    self.gen.throw(value)
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
-    raise mapped_exc(message) from exc
-httpx.ReadTimeout: timed out
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/src/langgraph_workflow.py", line 29, in wrapped
-    result = fn(state)
-             ^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/src/langgraph_nodes.py", line 226, in local_extractor_node
-    result = chain.invoke({"chunk": chunk})
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3157, in invoke
-    input_ = context.run(step.invoke, input_, config)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 5695, in invoke
-    return self.bound.invoke(
-           ^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 402, in invoke
-    self.generate_prompt(
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1121, in generate_prompt
-    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 931, in generate
-    self._generate_with_cache(
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1233, in _generate_with_cache
-    result = self._generate(
-             ^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_openai/chat_models/base.py", line 1422, in _generate
-    _handle_openai_api_error(e)
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_openai/chat_models/base.py", line 1394, in _generate
-    self.root_client.chat.completions.with_raw_response.parse(**payload)
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/openai/_legacy_response.py", line 364, in wrapped
-    return cast(LegacyAPIResponse[R], func(*args, **kwargs))
-                                      ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/openai/resources/chat/completions/completions.py", line 184, in parse
-    return self._post(
-           ^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/openai/_base_client.py", line 1297, in post
-    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/openai/_base_client.py", line 1023, in request
-    raise APITimeoutError(request=request) from err
-openai.APITimeoutError: Request timed out.
-23:25:12 [ERROR] Error: Request timed out.
-Traceback (most recent call last):
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
-    yield
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 250, in handle_request
-    resp = self._pool.handle_request(req)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_sync/connection_pool.py", line 256, in handle_request
-    raise exc from None
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_sync/connection_pool.py", line 236, in handle_request
-    response = connection.handle_request(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_sync/connection.py", line 103, in handle_request
-    return self._connection.handle_request(request)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_sync/http11.py", line 136, in handle_request
-    raise exc
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_sync/http11.py", line 106, in handle_request
-    ) = self._receive_response_headers(**kwargs)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_sync/http11.py", line 177, in _receive_response_headers
-    event = self._receive_event(timeout=timeout)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_sync/http11.py", line 217, in _receive_event
-    data = self._network_stream.read(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_backends/sync.py", line 126, in read
-    with map_exceptions(exc_map):
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/homebrew/anaconda3/lib/python3.12/contextlib.py", line 158, in __exit__
-    self.gen.throw(value)
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
-    raise to_exc(exc) from exc
-httpcore.ReadTimeout: timed out
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/openai/_base_client.py", line 1005, in request
-    response = self._client.send(
-               ^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_client.py", line 914, in send
-    response = self._send_handling_auth(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_client.py", line 942, in _send_handling_auth
-    response = self._send_handling_redirects(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
-    response = self._send_single_request(request)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_client.py", line 1014, in _send_single_request
-    response = transport.handle_request(request)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 249, in handle_request
-    with map_httpcore_exceptions():
-         ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/homebrew/anaconda3/lib/python3.12/contextlib.py", line 158, in __exit__
-    self.gen.throw(value)
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
-    raise mapped_exc(message) from exc
-httpx.ReadTimeout: timed out
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/src/langgraph_main.py", line 126, in main
-    actions = extract_actions(transcript)
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/src/langgraph_workflow.py", line 133, in extract_actions
-    final_state = app.invoke(initial_state)
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langgraph/pregel/main.py", line 3071, in invoke
-    for chunk in self.stream(
-                 ^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langgraph/pregel/main.py", line 2646, in stream
-    for _ in runner.tick(
-             ^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langgraph/pregel/_runner.py", line 167, in tick
-    run_with_retry(
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langgraph/pregel/_retry.py", line 42, in run_with_retry
-    return task.proc.invoke(task.input, config)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 656, in invoke
-    input = context.run(step.invoke, input, config, **kwargs)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 400, in invoke
-    ret = self.func(*args, **kwargs)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/src/langgraph_workflow.py", line 29, in wrapped
-    result = fn(state)
-             ^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/src/langgraph_nodes.py", line 226, in local_extractor_node
-    result = chain.invoke({"chunk": chunk})
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3157, in invoke
-    input_ = context.run(step.invoke, input_, config)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 5695, in invoke
-    return self.bound.invoke(
-           ^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 402, in invoke
-    self.generate_prompt(
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1121, in generate_prompt
-    return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 931, in generate
-    self._generate_with_cache(
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1233, in _generate_with_cache
-    result = self._generate(
-             ^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_openai/chat_models/base.py", line 1422, in _generate
-    _handle_openai_api_error(e)
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/langchain_openai/chat_models/base.py", line 1394, in _generate
-    self.root_client.chat.completions.with_raw_response.parse(**payload)
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/openai/_legacy_response.py", line 364, in wrapped
-    return cast(LegacyAPIResponse[R], func(*args, **kwargs))
-                                      ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/openai/resources/chat/completions/completions.py", line 184, in parse
-    return self._post(
-           ^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/openai/_base_client.py", line 1297, in post
-    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/nayeemislam/Documents/Projects/claude code test/agent-ai/venv/lib/python3.12/site-packages/openai/_base_client.py", line 1023, in request
-    raise APITimeoutError(request=request) from err
-openai.APITimeoutError: Request timed out.
-During task with name 'local_extractor' and id '2cc9d037-0f3c-96c6-e7db-e99d82eef44e'
+22:18:35 [INFO] Segmenter: Created 8 chunks
+22:18:35 [INFO] [31m[TIMING] Node segmenter: completed in 0.00s[0m
+22:18:35 [INFO] [TIMING] Node relevance_gate: started
+22:18:35 [INFO] RelevanceGate: Checking chunk 1/8
+22:18:36 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:36 [INFO] RelevanceGate: Chunk 1 -> NO
+22:18:36 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.96s[0m
+22:18:36 [INFO] [TIMING] Node increment_chunk: started
+22:18:36 [INFO] IncrementChunk: Moving to chunk 2
+22:18:36 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
+22:18:36 [INFO] [TIMING] Node relevance_gate: started
+22:18:36 [INFO] RelevanceGate: Checking chunk 2/8
+22:18:36 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:36 [INFO] RelevanceGate: Chunk 2 -> YES
+22:18:36 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.75s[0m
+22:18:36 [INFO] [TIMING] Node local_extractor: started
+22:18:36 [INFO] LocalExtractor: Extracting from chunk 2
+22:18:40 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:40 [INFO] LocalExtractor: Extracted 7 segments
+22:18:40 [INFO] [31m[TIMING] Node local_extractor: completed in 3.23s[0m
+22:18:40 [INFO] [TIMING] Node evidence_normalizer: started
+22:18:40 [INFO] EvidenceNormalizer: Normalizing 7 segments
+22:18:40 [INFO] EvidenceNormalizer: 7 segments after normalization
+22:18:40 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
+22:18:40 [INFO] [TIMING] Node context_resolver: started
+22:18:40 [INFO] ContextResolver: Resolving context for 7 new segments
+22:18:40 [INFO] ContextResolver: 0 unresolved references, 0 active topics
+22:18:40 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~597 chars, 0 previous actions)...
+22:18:40 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
+('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content='Context:\n\n\nNew segments from current chunk:\nJohn: ok so main thing today is the phoenix project timeline and also client delta feedback [information]\nSara: oh yeah that email was kind of concerning [information]\nSara: mostly the scope part they added analytics dashboard out of nowhere [information]\nJohn: right so first timeline where are we with backend api work [question]\nMike: so the auth service is done mostly except the refresh token logic which broke yesterday but i fixed i think [information]\nPriya: did you push that or is it still local [question]\nMike: pushed but the tests are red but not real red just flaky red [information]\n\nPrevious actions:\nNone', additional_kwargs={}, response_metadata={})])
+22:18:41 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:41 [INFO] ContextResolver: Created 0 new actions from this chunk
+22:18:41 [INFO] ContextResolver: 0 unresolved references remaining
+22:18:41 [INFO] [31m[TIMING] Node context_resolver: completed in 1.65s[0m
+22:18:41 [INFO] [TIMING] Node increment_chunk: started
+22:18:41 [INFO] IncrementChunk: Moving to chunk 3
+22:18:41 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
+22:18:41 [INFO] [TIMING] Node relevance_gate: started
+22:18:41 [INFO] RelevanceGate: Checking chunk 3/8
+22:18:42 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:42 [INFO] RelevanceGate: Chunk 3 -> YES
+22:18:42 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.75s[0m
+22:18:42 [INFO] [TIMING] Node local_extractor: started
+22:18:42 [INFO] LocalExtractor: Extracting from chunk 3
+22:18:45 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:45 [INFO] LocalExtractor: Extracted 5 segments
+22:18:45 [INFO] [31m[TIMING] Node local_extractor: completed in 2.70s[0m
+22:18:45 [INFO] [TIMING] Node evidence_normalizer: started
+22:18:45 [INFO] EvidenceNormalizer: Normalizing 5 segments
+22:18:45 [INFO] EvidenceNormalizer: Dropping meta-action segment: 'writing that down'
+22:18:45 [INFO] EvidenceNormalizer: 4 segments after normalization
+22:18:45 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
+22:18:45 [INFO] [TIMING] Node context_resolver: started
+22:18:45 [INFO] ContextResolver: Resolving context for 4 new segments
+22:18:45 [INFO] ContextResolver: 0 unresolved references, 0 active topics
+22:18:45 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~277 chars, 0 previous actions)...
+22:18:45 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
+('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content='Context:\n\n\nNew segments from current chunk:\nJohn: ok ok lets circle back to tests later [action_item]\nMike: if no more surprise fires maybe 10 days dev plus testing time which is theoretical [information]\nSara: frontend i need a week after api stabilizes [information]\nJohn: ok so roughly end of month internal [decision]\n\nPrevious actions:\nNone', additional_kwargs={}, response_metadata={})])
+22:18:46 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:46 [INFO] ContextResolver: Created 1 new actions from this chunk
+22:18:46 [INFO] ContextResolver: 0 unresolved references remaining
+22:18:46 [INFO] [31m[TIMING] Node context_resolver: completed in 1.36s[0m
+22:18:46 [INFO] [TIMING] Node increment_chunk: started
+22:18:46 [INFO] IncrementChunk: Moving to chunk 4
+22:18:46 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
+22:18:46 [INFO] [TIMING] Node relevance_gate: started
+22:18:46 [INFO] RelevanceGate: Checking chunk 4/8
+22:18:47 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:47 [INFO] RelevanceGate: Chunk 4 -> YES
+22:18:47 [INFO] [31m[TIMING] Node relevance_gate: completed in 1.00s[0m
+22:18:47 [INFO] [TIMING] Node local_extractor: started
+22:18:47 [INFO] LocalExtractor: Extracting from chunk 4
+22:18:50 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:50 [INFO] LocalExtractor: Extracted 4 segments
+22:18:50 [INFO] [31m[TIMING] Node local_extractor: completed in 2.62s[0m
+22:18:50 [INFO] [TIMING] Node evidence_normalizer: started
+22:18:50 [INFO] EvidenceNormalizer: Normalizing 4 segments
+22:18:50 [INFO] EvidenceNormalizer: 4 segments after normalization
+22:18:50 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
+22:18:50 [INFO] [TIMING] Node context_resolver: started
+22:18:50 [INFO] ContextResolver: Resolving context for 4 new segments
+22:18:50 [INFO] ContextResolver: 0 unresolved references, 2 active topics
+22:18:50 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~517 chars, 1 previous actions)...
+22:18:50 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
+('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content="Context:\n\nActive topics:\n- ok ok lets circle back to tests later: {'speaker': 'John', 'chunk': 2, 'resolved': True}\n- ok so roughly end of month internal: {'speaker': 'John', 'chunk': 2, 'resolved': False}\n\n\nNew segments from current chunk:\nSara: should we send them an update email today [suggestion]\nJohn: yes good point we need to reset expectations [decision]\nJohn: ok ill draft it after this [action_item]\nPriya: can you include the phased delivery plan [suggestion]\n\nPrevious actions:\n0. Circle back to flaky tests to investigate and resolve (assignee: John, deadline: later)", additional_kwargs={}, response_metadata={})])
+22:18:51 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:51 [INFO] ContextResolver: Created 1 new actions from this chunk
+22:18:51 [INFO] ContextResolver: 0 unresolved references remaining
+22:18:51 [INFO] [31m[TIMING] Node context_resolver: completed in 1.65s[0m
+22:18:51 [INFO] [TIMING] Node increment_chunk: started
+22:18:51 [INFO] IncrementChunk: Moving to chunk 5
+22:18:51 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
+22:18:51 [INFO] [TIMING] Node relevance_gate: started
+22:18:51 [INFO] RelevanceGate: Checking chunk 5/8
+22:18:52 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:52 [INFO] RelevanceGate: Chunk 5 -> YES
+22:18:52 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.81s[0m
+22:18:52 [INFO] [TIMING] Node local_extractor: started
+22:18:52 [INFO] LocalExtractor: Extracting from chunk 5
+22:18:54 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:54 [INFO] LocalExtractor: Extracted 3 segments
+22:18:54 [INFO] [31m[TIMING] Node local_extractor: completed in 2.40s[0m
+22:18:54 [INFO] [TIMING] Node evidence_normalizer: started
+22:18:54 [INFO] EvidenceNormalizer: Normalizing 3 segments
+22:18:54 [INFO] EvidenceNormalizer: 3 segments after normalization
+22:18:54 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
+22:18:54 [INFO] [TIMING] Node context_resolver: started
+22:18:54 [INFO] ContextResolver: Resolving context for 3 new segments
+22:18:54 [INFO] ContextResolver: 0 unresolved references, 4 active topics
+22:18:55 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~651 chars, 2 previous actions)...
+22:18:55 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
+('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content="Context:\n\nActive topics:\n- ok so roughly end of month internal: {'speaker': 'John', 'chunk': 2, 'resolved': False}\n- yes good point we need to reset expectations: {'speaker': 'John', 'chunk': 3, 'resolved': False}\n- ok ill draft it after this: {'speaker': 'John', 'chunk': 3, 'resolved': True}\n\n\nNew segments from current chunk:\nSara: and mention scope change impact [suggestion]\nMike: also can we schedule a bug bash session before release [suggestion]\nJohn: ok add bug bash maybe march 10 [action_item]\n\nPrevious actions:\n0. Circle back to flaky tests to investigate and resolve (assignee: John, deadline: later)\n1. Draft update email to client to reset expectations (assignee: John, deadline: after this meeting)", additional_kwargs={}, response_metadata={})])
+22:18:56 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:56 [INFO] ContextResolver: Created 1 new actions from this chunk
+22:18:56 [INFO] ContextResolver: 0 unresolved references remaining
+22:18:56 [INFO] [31m[TIMING] Node context_resolver: completed in 1.19s[0m
+22:18:56 [INFO] [TIMING] Node increment_chunk: started
+22:18:56 [INFO] IncrementChunk: Moving to chunk 6
+22:18:56 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
+22:18:56 [INFO] [TIMING] Node relevance_gate: started
+22:18:56 [INFO] RelevanceGate: Checking chunk 6/8
+22:18:57 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:57 [INFO] RelevanceGate: Chunk 6 -> YES
+22:18:57 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.83s[0m
+22:18:57 [INFO] [TIMING] Node local_extractor: started
+22:18:57 [INFO] LocalExtractor: Extracting from chunk 6
+22:18:58 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:18:58 [INFO] LocalExtractor: Extracted 3 segments
+22:18:58 [INFO] [31m[TIMING] Node local_extractor: completed in 1.86s[0m
+22:18:58 [INFO] [TIMING] Node evidence_normalizer: started
+22:18:58 [INFO] EvidenceNormalizer: Normalizing 3 segments
+22:18:58 [INFO] EvidenceNormalizer: 3 segments after normalization
+22:18:58 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
+22:18:58 [INFO] [TIMING] Node context_resolver: started
+22:18:58 [INFO] ContextResolver: Resolving context for 3 new segments
+22:18:58 [INFO] ContextResolver: 0 unresolved references, 5 active topics
+22:18:58 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~715 chars, 3 previous actions)...
+22:18:58 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
+('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content="Context:\n\nActive topics:\n- yes good point we need to reset expectations: {'speaker': 'John', 'chunk': 3, 'resolved': False}\n- ok ill draft it after this: {'speaker': 'John', 'chunk': 3, 'resolved': True}\n- ok add bug bash maybe march 10: {'speaker': 'John', 'chunk': 4, 'resolved': True}\n\n\nNew segments from current chunk:\nJohn: next topic infrastructure cost spike [information]\nMike: yeah sorry about that logs went into infinite mode [information]\nJohn: did we fix it [question]\n\nPrevious actions:\n0. Circle back to flaky tests to investigate and resolve (assignee: John, deadline: later)\n1. Draft update email to client to reset expectations (assignee: John, deadline: after this meeting)\n2. Schedule bug bash session for March 10 at 2 PM (assignee: John, deadline: March 10)", additional_kwargs={}, response_metadata={})])
+22:19:00 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:19:00 [INFO] ContextResolver: Created 0 new actions from this chunk
+22:19:00 [INFO] ContextResolver: 0 unresolved references remaining
+22:19:00 [INFO] [31m[TIMING] Node context_resolver: completed in 1.19s[0m
+22:19:00 [INFO] [TIMING] Node increment_chunk: started
+22:19:00 [INFO] IncrementChunk: Moving to chunk 7
+22:19:00 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
+22:19:00 [INFO] [TIMING] Node relevance_gate: started
+22:19:00 [INFO] RelevanceGate: Checking chunk 7/8
+22:19:00 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:19:00 [INFO] RelevanceGate: Chunk 7 -> YES
+22:19:00 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.72s[0m
+22:19:00 [INFO] [TIMING] Node local_extractor: started
+22:19:00 [INFO] LocalExtractor: Extracting from chunk 7
+22:19:04 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:19:04 [INFO] LocalExtractor: Extracted 7 segments
+22:19:04 [INFO] [31m[TIMING] Node local_extractor: completed in 3.47s[0m
+22:19:04 [INFO] [TIMING] Node evidence_normalizer: started
+22:19:04 [INFO] EvidenceNormalizer: Normalizing 7 segments
+22:19:04 [INFO] EvidenceNormalizer: 7 segments after normalization
+22:19:04 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
+22:19:04 [INFO] [TIMING] Node context_resolver: started
+22:19:04 [INFO] ContextResolver: Resolving context for 7 new segments
+22:19:04 [INFO] ContextResolver: 0 unresolved references, 5 active topics
+22:19:04 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~948 chars, 3 previous actions)...
+22:19:04 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
+('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content="Context:\n\nActive topics:\n- yes good point we need to reset expectations: {'speaker': 'John', 'chunk': 3, 'resolved': False}\n- ok ill draft it after this: {'speaker': 'John', 'chunk': 3, 'resolved': True}\n- ok add bug bash maybe march 10: {'speaker': 'John', 'chunk': 4, 'resolved': True}\n\n\nNew segments from current chunk:\nMike: log level back to normal we were in debug in prod which is not ideal [information]\nSara: do we need to inform finance [question]\nJohn: probably ill talk to them [action_item]\nMike: also monitoring alerts didnt fire which is concerning [information]\nPriya: we should create a task for fixing alert rules [suggestion]\nSara: agreed [agreement]\nJohn: priya can you track that [action_item]\n\nPrevious actions:\n0. Circle back to flaky tests to investigate and resolve (assignee: John, deadline: later)\n1. Draft update email to client to reset expectations (assignee: John, deadline: after this meeting)\n2. Schedule bug bash session for March 10 at 2 PM (assignee: John, deadline: March 10)", additional_kwargs={}, response_metadata={})])
+22:19:05 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:19:05 [INFO] ContextResolver: Created 2 new actions from this chunk
+22:19:05 [INFO] ContextResolver: 0 unresolved references remaining
+22:19:05 [INFO] [31m[TIMING] Node context_resolver: completed in 1.54s[0m
+22:19:05 [INFO] [TIMING] Node increment_chunk: started
+22:19:05 [INFO] IncrementChunk: Moving to chunk 8
+22:19:05 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
+22:19:05 [INFO] [TIMING] Node relevance_gate: started
+22:19:05 [INFO] RelevanceGate: Checking chunk 8/8
+22:19:06 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:19:06 [INFO] RelevanceGate: Chunk 8 -> YES
+22:19:06 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.70s[0m
+22:19:06 [INFO] [TIMING] Node local_extractor: started
+22:19:06 [INFO] LocalExtractor: Extracting from chunk 8
+22:19:09 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:19:09 [INFO] LocalExtractor: Extracted 7 segments
+22:19:09 [INFO] [31m[TIMING] Node local_extractor: completed in 3.01s[0m
+22:19:09 [INFO] [TIMING] Node evidence_normalizer: started
+22:19:09 [INFO] EvidenceNormalizer: Normalizing 7 segments
+22:19:09 [INFO] EvidenceNormalizer: 7 segments after normalization
+22:19:09 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
+22:19:09 [INFO] [TIMING] Node context_resolver: started
+22:19:09 [INFO] ContextResolver: Resolving context for 7 new segments
+22:19:09 [INFO] ContextResolver: 0 unresolved references, 7 active topics
+22:19:09 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~1195 chars, 5 previous actions)...
+22:19:09 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
+('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content="Context:\n\nActive topics:\n- ok add bug bash maybe march 10: {'speaker': 'John', 'chunk': 4, 'resolved': True}\n- probably ill talk to them: {'speaker': 'John', 'chunk': 6, 'resolved': True}\n- priya can you track that: {'speaker': 'John', 'chunk': 6, 'resolved': True}\n\n\nNew segments from current chunk:\nPriya: yes adding to list [action_item]\nSara: small question are we still doing the accessibility review [question]\nJohn: oh good point we skipped last sprint [information]\nMike: yeah sorry i was supposed to check color contrast thing [action_item]\nSara: lets not forget that the client mentioned it in kickoff [suggestion]\nJohn: ok add accessibility review to phase one [decision]\nPriya: noted [agreement]\n\nPrevious actions:\n0. Circle back to flaky tests to investigate and resolve (assignee: John, deadline: later)\n1. Draft update email to client to reset expectations (assignee: John, deadline: after this meeting)\n2. Schedule bug bash session for March 10 at 2 PM (assignee: John, deadline: March 10)\n3. Talk to finance to inform them about the production debug logging issue (assignee: John, deadline: None)\n4. Create and track a task for fixing monitoring alert rules that failed to fire during the production incident (assignee: Priya, deadline: None)", additional_kwargs={}, response_metadata={})])
+22:19:10 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+22:19:10 [INFO] ContextResolver: Created 2 new actions from this chunk
+22:19:10 [INFO] ContextResolver: 0 unresolved references remaining
+22:19:10 [INFO] [31m[TIMING] Node context_resolver: completed in 1.20s[0m
+22:19:10 [INFO] [TIMING] Node increment_chunk: started
+22:19:10 [INFO] IncrementChunk: Moving to chunk 9
+22:19:10 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
+22:19:10 [INFO] [TIMING] Node relevance_gate: started
+22:19:10 [INFO] RelevanceGate: All chunks processed, ending workflow
+22:19:10 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.00s[0m
+22:19:10 [INFO] [TIMING] Node global_deduplicator: started
+22:19:10 [INFO] GlobalDeduplicator: Processing 7 actions
+22:19:10 [INFO] GlobalDeduplicator: Reduced 7 -> 7 actions
+22:19:10 [INFO] [31m[TIMING] Node global_deduplicator: completed in 0.00s[0m
+22:19:10 [INFO] [TIMING] Node action_finalizer: started
+22:19:10 [INFO] ActionFinalizer: Finalizing 7 actions
+22:19:10 [INFO] ActionFinalizer: Finalized 7 actions (source_spans, meeting_window)
+22:19:10 [INFO] [ACTION] #1 description=Circle back to flaky tests to investigate and resolve | source_spans=['cbefa1ccbd15'] | meeting_window=[2, 2]
+22:19:10 [INFO] [ACTION] #2 description=Draft update email to client to reset expectations | source_spans=['f5ddcca3181f'] | meeting_window=[3, 3]
+22:19:10 [INFO] [ACTION] #3 description=Schedule bug bash session for March 10 at 2 PM | source_spans=['39f2a02e3f28'] | meeting_window=[4, 4]
+22:19:10 [INFO] [ACTION] #4 description=Talk to finance to inform them about the production debug logging issue | source_spans=['e2e220fe25a2'] | meeting_window=[6, 6]
+22:19:10 [INFO] [ACTION] #5 description=Create and track a task for fixing monitoring alert rules that failed to fire during the production incident | source_spans=['90f9c0600572'] | meeting_window=[6, 6]
+22:19:10 [INFO] [ACTION] #6 description=Add accessibility review to task list | source_spans=['17560357b510'] | meeting_window=[7, 7]
+22:19:10 [INFO] [ACTION] #7 description=Check color contrast for accessibility compliance | source_spans=['160ed0f28501'] | meeting_window=[7, 7]
+22:19:10 [INFO] [31m[TIMING] Node action_finalizer: completed in 0.00s[0m
+22:19:10 [INFO] Extraction complete: 7 actions extracted
+22:19:10 [INFO] Writing output to: output_small.json
+22:19:10 [INFO] Done. Extracted 7 action(s).
+22:19:10 [INFO] Results saved to output_small.json
+22:19:10 [INFO] Log saved to output_log.txt

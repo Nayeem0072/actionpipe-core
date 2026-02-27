@@ -1,6 +1,6 @@
 # LangGraph Meeting Action Item Extractor
 
-A LangGraph-based agent that processes raw meeting transcripts and extracts structured action items. Each node in the pipeline runs locally via Ollama's OpenAI-compatible API, so no data leaves your machine.
+A LangGraph-based agent that processes raw meeting transcripts and extracts structured action items. Supports multiple LLM providers — run fully locally via Ollama, or use Anthropic's Claude API for higher accuracy.
 
 ---
 
@@ -15,6 +15,96 @@ A LangGraph-based agent that processes raw meeting transcripts and extracts stru
 
 ---
 
+## LLM Providers
+
+The active provider is selected by a single variable in `.env`. Each provider's model and generation settings live in its own config file under `configs/`.
+
+### Switching providers
+
+Set `ACTIVE_PROVIDER` in `.env` to one of the supported values:
+
+| `ACTIVE_PROVIDER` | Config file | Description |
+|---|---|---|
+| `claude` | `configs/claude.env` | Anthropic Claude API (cloud) |
+| `ollama` | `configs/ollama_glm.env` | Ollama local inference (no data leaves machine) |
+
+```env
+# .env
+ACTIVE_PROVIDER=claude   # or: ollama
+```
+
+---
+
+### Provider: Claude (Anthropic)
+
+Uses Anthropic's API. Requires an `ANTHROPIC_API_KEY` in `.env` (never commit this key).
+
+```env
+# .env
+ACTIVE_PROVIDER=claude
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Per-node models used by `configs/claude.env`:
+
+| Node | Model | Rationale |
+|---|---|---|
+| Relevance Gate | `claude-3-5-haiku-20241022` | Fastest and cheapest; binary YES/NO decision |
+| Local Extractor | `claude-3-5-haiku-20241022` | Fast with strong JSON instruction-following |
+| Context Resolver | `claude-3-7-sonnet-20250219` | Strongest reasoning for cross-chunk reference resolution |
+
+Key generation parameters (per node):
+
+| Node | `temperature` | `max_tokens` | `top_p` | `timeout` |
+|---|---|---|---|---|
+| Relevance Gate | 0.1 | 100 | 0.15 | 60 s |
+| Local Extractor | 0.2 | 2000 | 0.15 | 120 s |
+| Context Resolver | 0.3 | 4096 | 0.2 | 180 s |
+
+---
+
+### Provider: Ollama (local)
+
+Runs models locally via Ollama's OpenAI-compatible API. No data leaves your machine.
+
+1. Install and start Ollama, then pull the model:
+
+```bash
+ollama run glm-4.7-flash
+```
+
+2. Set in `.env`:
+
+```env
+# .env
+ACTIVE_PROVIDER=ollama
+LANGGRAPH_API_KEY=ollama   # any non-empty string; Ollama ignores it
+```
+
+Per-node models used by `configs/ollama_glm.env`:
+
+| Node | Model | API URL |
+|---|---|---|
+| All nodes | `glm-4.7-flash` | `http://localhost:11434/v1` |
+
+Key generation parameters (per node):
+
+| Node | `temperature` | `max_tokens` | `top_p` | `repeat_penalty` | `presence_penalty` | `timeout` |
+|---|---|---|---|---|---|---|
+| Relevance Gate | 0.1 | 100 | 0.15 | 1.2 | 0.6 | 60 s |
+| Local Extractor | 0.2 | 2000 | 0.15 | 1.2 | 0.6 | 120 s |
+| Context Resolver | 0.3 | 2000 | 0.2 | 1.2 | 0.6 | 180 s |
+
+---
+
+### Adding a new provider
+
+1. Create `configs/<provider>.env` with `PROVIDER=<name>` and the relevant per-node variables.
+2. Set `ACTIVE_PROVIDER=<name>` in `.env`.
+3. Add any API key to `.env` (which is gitignored).
+
+---
+
 ## Installation
 
 1. Install dependencies:
@@ -22,7 +112,9 @@ A LangGraph-based agent that processes raw meeting transcripts and extracts stru
 pip install -r requirements.txt
 ```
 
-2. Ensure your model is running via Ollama:
+2. Configure your provider in `.env` (see [LLM Providers](#llm-providers) above).
+
+3. If using Ollama, ensure the model is running:
 ```bash
 ollama run glm-4.7-flash
 ```
@@ -31,20 +123,20 @@ ollama run glm-4.7-flash
 
 ## Configuration
 
-Create a `.env` file in the project root:
+The `.env` file in the project root controls provider selection and API keys:
 
 ```env
-GLM_API_URL=http://localhost:11434/v1
-GLM_API_KEY=ollama
-MODEL_NAME=glm-4.7-flash
-TEMPERATURE=0
-MAX_TOKENS=2500
-TOP_P=1
-REPEAT_PENALTY=1.1
-PRESENCE_PENALTY=0.0
+# Select the active provider
+ACTIVE_PROVIDER=claude   # or: ollama
+
+# Anthropic key (required when ACTIVE_PROVIDER=claude)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Ollama key (required when ACTIVE_PROVIDER=ollama — any non-empty string)
+LANGGRAPH_API_KEY=ollama
 ```
 
-Per-node overrides (optional — fall back to the above if not set):
+Per-node behaviour can be further tuned via optional overrides in `.env` (these fall back to the provider config defaults if not set):
 
 ```env
 CONTEXT_RESOLVER_TIMEOUT=180
@@ -274,4 +366,5 @@ agent-ai/
 ## Requirements
 
 - Python 3.10+
-- Ollama with `glm-4.7-flash` (or any OpenAI-compatible model served locally)
+- **Ollama provider:** Ollama running locally with `glm-4.7-flash` pulled (or any OpenAI-compatible model)
+- **Claude provider:** Anthropic API key (`ANTHROPIC_API_KEY`) and internet access

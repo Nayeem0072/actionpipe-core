@@ -1,14 +1,14 @@
 [
   {
-    "description": "Note to circle back to flaky tests later",
-    "assignee": "Priya",
+    "description": "Circle back to flaky tests to investigate and resolve the issue",
+    "assignee": "John",
     "deadline": "later",
-    "speaker": "Priya",
+    "speaker": "John",
     "verb": "do",
     "object_text": null,
-    "confidence": 1.0,
+    "confidence": 0.85,
     "source_spans": [
-      "136a15e5c198"
+      "cbefa1ccbd15"
     ],
     "meeting_window": [
       2,
@@ -16,15 +16,31 @@
     ]
   },
   {
-    "description": "Note down the agreed MVP scope details including auth dashboard, basic summary reports, and exclusion of custom exports and full analytics.",
-    "assignee": "Priya",
-    "deadline": null,
-    "speaker": "Priya",
+    "description": "Draft update email to client to reset expectations",
+    "assignee": "John",
+    "deadline": "after the meeting",
+    "speaker": "John",
     "verb": "do",
     "object_text": null,
-    "confidence": 1.0,
+    "confidence": 0.85,
     "source_spans": [
-      "f4bcb8a77242"
+      "f5ddcca3181f"
+    ],
+    "meeting_window": [
+      3,
+      3
+    ]
+  },
+  {
+    "description": "Schedule bug bash session for March 10 at 2 pm (afternoon)",
+    "assignee": "John",
+    "deadline": "March 10",
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 0.85,
+    "source_spans": [
+      "39f2a02e3f28"
     ],
     "meeting_window": [
       4,
@@ -32,15 +48,15 @@
     ]
   },
   {
-    "description": "Draft the email to the client regarding the previous communication and ghosting issue, including the phased delivery plan and scope change impact",
+    "description": "Talk to finance to inform them about the production debug logging issue",
     "assignee": "John",
-    "deadline": "after this",
+    "deadline": null,
     "speaker": "John",
     "verb": "do",
     "object_text": null,
-    "confidence": 1.0,
+    "confidence": 0.9,
     "source_spans": [
-      "0f91f06df2cc"
+      "e2e220fe25a2"
     ],
     "meeting_window": [
       6,
@@ -48,15 +64,31 @@
     ]
   },
   {
-    "description": "Add bug bash for March 10",
-    "assignee": "John",
-    "deadline": "March 10",
+    "description": "Create and track a task for fixing monitoring alert rules that failed to fire during the production incident",
+    "assignee": "Priya",
+    "deadline": null,
     "speaker": "John",
     "verb": "do",
     "object_text": null,
-    "confidence": 1.0,
+    "confidence": 0.95,
     "source_spans": [
-      "c736c0af8c9c"
+      "90f9c0600572"
+    ],
+    "meeting_window": [
+      6,
+      6
+    ]
+  },
+  {
+    "description": "Add accessibility review to task list",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "Priya",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 0.7,
+    "source_spans": [
+      "17560357b510"
     ],
     "meeting_window": [
       7,
@@ -64,163 +96,19 @@
     ]
   },
   {
-    "description": "Inform finance about the logs issue",
-    "assignee": "John",
+    "description": "Check color contrast for accessibility compliance",
+    "assignee": "Mike",
     "deadline": null,
-    "speaker": "John",
+    "speaker": "Mike",
     "verb": "do",
     "object_text": null,
-    "confidence": 1.0,
+    "confidence": 0.8,
     "source_spans": [
-      "c510d65ee7d2"
+      "160ed0f28501"
     ],
     "meeting_window": [
-      8,
-      8
-    ]
-  },
-  {
-    "description": "Create a task for fixing alert rules",
-    "assignee": "Priya",
-    "deadline": null,
-    "speaker": "John",
-    "verb": "do",
-    "object_text": null,
-    "confidence": 1.0,
-    "source_spans": [
-      "d33ed56052d9"
-    ],
-    "meeting_window": [
-      9,
-      9
-    ]
-  },
-  {
-    "description": "Add task for fixing alert rules to the list",
-    "assignee": "Priya",
-    "deadline": null,
-    "speaker": "Priya",
-    "verb": "do",
-    "object_text": null,
-    "confidence": 1.0,
-    "source_spans": [
-      "fa9d4bfe1cb4"
-    ],
-    "meeting_window": [
-      9,
-      9
-    ]
-  },
-  {
-    "description": "Add accessibility review to phase one",
-    "assignee": "John",
-    "deadline": null,
-    "speaker": "John",
-    "verb": "do",
-    "object_text": null,
-    "confidence": 1.0,
-    "source_spans": [
-      "bba84a3c9a8f"
-    ],
-    "meeting_window": [
-      10,
-      10
-    ]
-  },
-  {
-    "description": "Own the user guide draft",
-    "assignee": "Sara",
-    "deadline": null,
-    "speaker": "John",
-    "verb": "do",
-    "object_text": null,
-    "confidence": 1.0,
-    "source_spans": [
-      "e4bd583298f8"
-    ],
-    "meeting_window": [
-      12,
-      12
-    ]
-  },
-  {
-    "description": "Obtain inputs from John and Mike for the user guide draft",
-    "assignee": "Sara",
-    "deadline": null,
-    "speaker": "Sara",
-    "verb": "do",
-    "object_text": null,
-    "confidence": 1.0,
-    "source_spans": [
-      "5a79ff04e025"
-    ],
-    "meeting_window": [
-      12,
-      12
-    ]
-  },
-  {
-    "description": "Create a release checklist",
-    "assignee": "Priya",
-    "deadline": null,
-    "speaker": "Priya",
-    "verb": "do",
-    "object_text": null,
-    "confidence": 1.0,
-    "source_spans": [
-      "cd4e885b7153"
-    ],
-    "meeting_window": [
-      12,
-      12
-    ]
-  },
-  {
-    "description": "Check with security team",
-    "assignee": "Priya",
-    "deadline": null,
-    "speaker": "Priya",
-    "verb": "do",
-    "object_text": null,
-    "confidence": 1.0,
-    "source_spans": [
-      "4f180ccea137"
-    ],
-    "meeting_window": [
-      14,
-      14
-    ]
-  },
-  {
-    "description": "Schedule a test restore for the database backup strategy",
-    "assignee": "John",
-    "deadline": null,
-    "speaker": "John",
-    "verb": "do",
-    "object_text": null,
-    "confidence": 1.0,
-    "source_spans": [
-      "28ba686e91a9"
-    ],
-    "meeting_window": [
-      14,
-      14
-    ]
-  },
-  {
-    "description": "Add the task to the project management list",
-    "assignee": "Priya",
-    "deadline": null,
-    "speaker": "Priya",
-    "verb": "do",
-    "object_text": null,
-    "confidence": 1.0,
-    "source_spans": [
-      "09e22e3544ab"
-    ],
-    "meeting_window": [
-      14,
-      14
+      7,
+      7
     ]
   }
 ]
