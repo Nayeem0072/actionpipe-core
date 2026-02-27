@@ -5,3 +5,6 @@ __pycache__/
 venv/
 *.egg-info/
 output_log
+output_log.txt
+output_small.json
+output*.json
