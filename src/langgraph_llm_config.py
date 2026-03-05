@@ -117,7 +117,25 @@ LOCAL_EXTRACTOR_CONFIG = {
 
 
 # ============================================================================
-# CONTEXT RESOLVER NODE
+# CROSS-CHUNK RESOLVER NODE
+# ============================================================================
+
+CROSS_CHUNK_RESOLVER_CONFIG = {
+    "provider": _get("CROSS_CHUNK_RESOLVER_PROVIDER", PROVIDER),
+    "model_name": _get("CROSS_CHUNK_RESOLVER_MODEL_NAME", DEFAULT_MODEL_NAME),
+    "api_url": _get("CROSS_CHUNK_RESOLVER_API_URL", DEFAULT_API_URL),
+    "api_key": _get("CROSS_CHUNK_RESOLVER_API_KEY") or _get("GOOGLE_API_KEY") or _get("ANTHROPIC_API_KEY") or DEFAULT_API_KEY,
+    "temperature": float(_get("CROSS_CHUNK_RESOLVER_TEMPERATURE", "0.2")),
+    "max_tokens": int(_get("CROSS_CHUNK_RESOLVER_MAX_TOKENS", "4096")),
+    "top_p": float(_get("CROSS_CHUNK_RESOLVER_TOP_P", "0.15")),
+    "repeat_penalty": float(_get("CROSS_CHUNK_RESOLVER_REPEAT_PENALTY", "1.2")),
+    "presence_penalty": float(_get("CROSS_CHUNK_RESOLVER_PRESENCE_PENALTY", "0.6")),
+    "timeout": float(_get("CROSS_CHUNK_RESOLVER_TIMEOUT", "120")),
+}
+
+
+# ============================================================================
+# CONTEXT RESOLVER NODE  (legacy — no longer an active graph node)
 # ============================================================================
 
 CONTEXT_RESOLVER_CONFIG = {

@@ -1,14 +1,14 @@
-00:15:25 [INFO] Loading input file: input_very_small.txt
-00:15:25 [INFO] Reading transcript from plain text file: input_very_small.txt
-00:15:25 [INFO] Input loaded (2760 characters). Starting LangGraph extraction.
-00:15:25 [INFO] Starting action extraction workflow...
-00:15:25 [INFO] LangGraph workflow created successfully
-00:15:25 [INFO] Executing graph workflow...
-00:15:25 [INFO] [TIMING] Node segmenter: started
-00:15:25 [INFO] Segmenter: Starting chunking...
-00:15:25 [INFO] Segmenter: Found 63 speaker turns
-00:15:25 [INFO] Segmenter: Chunk index: 0, length: 382
-00:15:25 [INFO] Segmenter: Chunk text: John: hey everyone can you hear me ok
+21:39:35 [INFO] Loading input file: input_large.txt
+21:39:35 [INFO] Reading transcript from plain text file: input_large.txt
+21:39:35 [INFO] Input loaded (12502 characters). Starting LangGraph extraction.
+21:39:35 [INFO] Starting action extraction workflow...
+21:39:35 [INFO] LangGraph workflow created successfully
+21:39:35 [INFO] Executing graph workflow...
+21:39:35 [INFO] [TIMING] Node segmenter: started
+21:39:35 [INFO] Segmenter: Starting chunking...
+21:39:35 [INFO] Segmenter: Found 300 speaker turns
+21:39:35 [INFO] Segmenter: Chunk index: 0, length: 950
+21:39:35 [INFO] Segmenter: Chunk text: John: hey everyone can you hear me ok
 
 Sara: yeah yeah loud and clear i think mike is still joining
 
@@ -23,8 +23,22 @@ Sara: tired honestly too many back to back calls
 Priya: same here its been a week and its only wednesday
 
 Mike: haha yeah time is fake
-00:15:25 [INFO] Segmenter: Chunk index: 8, length: 581
-00:15:25 [INFO] Segmenter: Chunk text: John: ok so main thing today is the phoenix project timeline and also client delta feedback
+
+Sara: true true okay so i have seven meetings today
+
+Mike: how are you alive
+
+Sara: coffee and spite
+
+Priya: what time is your last call
+
+Sara: six thirty ugh
+
+John: okay lets make this efficient then
+
+Mike: agreed agreed
+
+John: ok so main thing today is the phoenix project timeline and also client delta feedback
 
 Sara: oh yeah that email was kind of concerning
 
@@ -33,14 +47,14 @@ Priya: which part the budget or the scope creep part
 Sara: mostly the scope part like they added analytics dashboard out of nowhere
 
 John: right so first timeline um where are we with backend api work
-
-Mike: so the auth service is done mostly except the refresh token logic which broke yesterday but i fixed i think
+21:39:35 [INFO] Segmenter: Chunk index: 20, length: 1004
+21:39:35 [INFO] Segmenter: Chunk text: Mike: so the auth service is done mostly except the refresh token logic which broke yesterday but i fixed i think
 
 Priya: did you push that or is it still local
 
 Mike: uh pushed but the tests are red but like not real red just flaky red
-00:15:25 [INFO] Segmenter: Chunk index: 16, length: 381
-00:15:25 [INFO] Segmenter: Chunk text: Sara: wait flaky red is still red mike
+
+Sara: wait flaky red is still red mike
 
 Mike: yeah but like emotionally green
 
@@ -48,15 +62,139 @@ John: ok ok lets circle back to tests later
 
 Priya: writing that down
 
+John: also quick check mike the refresh token issue was it affecting session timeout too
+
+Mike: uh probably not separate flow but i should verify
+
+Sara: please do that before we merge to staging
+
+Mike: yeah yeah i will
+
+Priya: what about unit test coverage are we tracking that
+
+Mike: its somewhere around sixty percent which sounds bad but most untested parts are boilerplate
+
+John: lets try to get it to seventy before release
+
+Mike: realistically or optimistically
+
+John: realistically
+
+Mike: okay doable
+
+Sara: should we add that to the definition of done
+
+John: good idea yes
+
+Priya: ill update the dod document
+21:39:35 [INFO] Segmenter: Chunk index: 40, length: 985
+21:39:35 [INFO] Segmenter: Chunk text: Mike: wait we have a dod document
+
+Priya: yes mike i sent it in slack three weeks ago
+
+Mike: ah right the long message i said ill read later
+
+Sara: classic
+
+John: okay moving on now for real
+
+John: frontend status
+
+Sara: dashboard skeleton done charts not wired api still returning like old schema thing
+
+Mike: thats my bad the response shape changed and i forgot to ping you
+
+Sara: yeah that that that explains the exploding graph
+
+Priya: sorry small thing my dog is barking one sec
+
+Priya: okay back
+
+John: alright now client delta asked for delivery by march fifteenth which is… ambitious
+
+Sara: ambitious is polite
+
+Mike: impossible is the other word
+
+John: can we phase it maybe core features first
+
+Priya: yeah mvp style release
+
+Sara: we need to define mvp though otherwise mvp becomes everything
+
+Mike: [noise] sorry dropped my headset
+
+John: ok so mvp = auth dashboard basic reports no custom exports agreed
+
+Sara: wait reports means the summary table right not full analytics
+21:39:35 [INFO] Segmenter: Chunk index: 60, length: 906
+21:39:35 [INFO] Segmenter: Chunk text: John: yeah summary only
+
+Priya: im noting that
+
+Mike: wait does mvp include role permissions or is that phase two
+
+John: good catch phase one basic roles only admin and user
+
+Sara: ok thats manageable
+
 Priya: timeline wise backend how long mike
 
 Mike: if no more surprise fires maybe 10 days dev plus testing time which is theoretical
 
 Sara: frontend i need like a week after api stabilizes
 
+Priya: what about QA time have we accounted for that
+
+Sara: right QA needs at least three to four days
+
+John: who does QA on this team
+
+Mike: we all do kind of which is not ideal
+
+Sara: we should get at least one dedicated pass
+
+John: can we loop in alex from the other team
+
+Priya: he might be available ill ask him
+
+Sara: that would be great
+
+Mike: yeah external eyes catch different things
+
+John: ok priya check with alex about QA support
+
+Priya: on it
+
+Sara: also what about user acceptance testing client side
+21:39:35 [INFO] Segmenter: Chunk index: 80, length: 840
+21:39:35 [INFO] Segmenter: Chunk text: John: good point should we set up a staging environment for them
+
+Mike: staging is technically set up but login doesnt work yet
+
+Sara: of course it doesnt
+
+Mike: its on my list
+
+John: mike can you prioritize that this week
+
+Mike: yes okay moving it to top of list
+
+Sara: and please send us the staging link when its ready
+
+Mike: will do
+
+Priya: noting staging access as a task for mike this week
+
+Mike: noted noted
+
+John: good so internal end of month then staging to client first week after
+
+Sara: that works
+
 John: ok so roughly end of month internal
-00:15:25 [INFO] Segmenter: Chunk index: 24, length: 335
-00:15:25 [INFO] Segmenter: Chunk text: Priya: client wont like that
+
+Priya: client wont like that
 
 John: yeah but reality
 
@@ -69,10 +207,10 @@ Mike: who sends that i sent the last one and they ghosted
 Sara: maybe better from john this time
 
 John: ok ill draft it after this
+21:39:35 [INFO] Segmenter: Chunk index: 100, length: 645
+21:39:35 [INFO] Segmenter: Chunk text: Priya: can you include the phased delivery plan
 
-Priya: can you include the phased delivery plan
-00:15:25 [INFO] Segmenter: Chunk index: 32, length: 242
-00:15:25 [INFO] Segmenter: Chunk text: John: yep
+John: yep
 
 Sara: and mention scope change impact
 
@@ -87,12 +225,60 @@ John: ok add bug bash maybe march 10
 Priya: march 10 what time
 
 John: afternoon maybe 2 pm
-00:15:25 [INFO] Segmenter: Chunk index: 40, length: 231
-00:15:25 [INFO] Segmenter: Chunk text: Sara: works
+
+Sara: works
 
 Mike: works
 
 Priya: ok
+
+Sara: actually quick thing about deployment who handles prod deploy
+
+Mike: technically me but i should document it
+
+John: yeah thats a bus factor problem
+
+Sara: very much so
+
+Priya: can you write a deploy runbook mike
+
+Mike: a runbook right okay i can do that
+
+John: priya add that to mikes list
+
+Priya: already did
+21:39:35 [INFO] Segmenter: Chunk index: 120, length: 774
+21:39:35 [INFO] Segmenter: Chunk text: Sara: also do we have a rollback plan
+
+Mike: uh kind of
+
+Sara: kind of is not a plan
+
+Mike: i mean i can redeploy previous version pretty quickly
+
+John: how quick
+
+Mike: like ten minutes maybe
+
+John: is there a database migration issue
+
+Mike: good point if we run migrations rollback gets complicated
+
+Priya: we should talk to infrastructure team about that
+
+John: agreed ill add that to my list
+
+Sara: maybe we do a dry run rollback in staging
+
+Mike: ooh that is actually smart
+
+John: yes lets schedule that
+
+Priya: ill find time for it this sprint
+
+Mike: great
+
+Sara: okay now infrastructure costs
 
 John: next topic infrastructure cost spike
 
@@ -101,10 +287,10 @@ Mike: yeah sorry about that logs went into infinite mode
 Sara: infinite mode sounds expensive
 
 Mike: it was spiritually infinite
+21:39:35 [INFO] Segmenter: Chunk index: 140, length: 841
+21:39:35 [INFO] Segmenter: Chunk text: John: did we fix it
 
-John: did we fix it
-00:15:25 [INFO] Segmenter: Chunk index: 48, length: 333
-00:15:25 [INFO] Segmenter: Chunk text: Mike: yeah log level back to normal we were in debug in prod which is not ideal
+Mike: yeah log level back to normal we were in debug in prod which is not ideal
 
 Priya: understatement
 
@@ -119,8 +305,8 @@ Priya: we should create a task for fixing alert rules
 Sara: agreed
 
 John: priya can you track that
-00:15:25 [INFO] Segmenter: Chunk index: 56, length: 323
-00:15:25 [INFO] Segmenter: Chunk text: Priya: yes adding to list
+
+Priya: yes adding to list
 
 Sara: small question are we still doing the accessibility review
 
@@ -133,239 +319,409 @@ Sara: lets not forget that the client mentioned it in kickoff
 John: ok add accessibility review to phase one
 
 Priya: noted
-00:15:25 [INFO] Segmenter: Created 8 chunks
-00:15:25 [INFO] [31m[TIMING] Node segmenter: completed in 0.00s[0m
-00:15:25 [INFO] [TIMING] Node relevance_gate: started
-00:15:25 [INFO] RelevanceGate: Checking chunk 1/8
-00:15:26 [INFO] AFC is enabled with max remote calls: 10.
-00:15:27 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent "HTTP/1.1 200 OK"
-00:15:27 [INFO] RelevanceGate: Chunk 1 -> NO
-00:15:27 [INFO] [31m[TIMING] Node relevance_gate: completed in 1.46s[0m
-00:15:27 [INFO] [TIMING] Node increment_chunk: started
-00:15:27 [INFO] IncrementChunk: Moving to chunk 2
-00:15:27 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
-00:15:27 [INFO] [TIMING] Node relevance_gate: started
-00:15:27 [INFO] RelevanceGate: Checking chunk 2/8
-00:15:27 [INFO] AFC is enabled with max remote calls: 10.
-00:15:28 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent "HTTP/1.1 200 OK"
-00:15:28 [INFO] RelevanceGate: Chunk 2 -> YES
-00:15:28 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.97s[0m
-00:15:28 [INFO] [TIMING] Node local_extractor: started
-00:15:28 [INFO] LocalExtractor: Extracting from chunk 2
-00:15:28 [INFO] AFC is enabled with max remote calls: 10.
-00:15:36 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-00:15:36 [INFO] LocalExtractor: Extracted 6 segments
-00:15:36 [INFO] [31m[TIMING] Node local_extractor: completed in 8.42s[0m
-00:15:36 [INFO] [TIMING] Node evidence_normalizer: started
-00:15:36 [INFO] EvidenceNormalizer: Normalizing 6 segments
-00:15:36 [INFO] EvidenceNormalizer: 6 segments after normalization
-00:15:36 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
-00:15:36 [INFO] [TIMING] Node context_resolver: started
-00:15:36 [INFO] ContextResolver: Resolving context for 6 new segments
-00:15:36 [INFO] ContextResolver: 0 unresolved references, 0 active topics
-00:15:36 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~540 chars, 0 previous actions)...
-00:15:36 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
-('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content='Context:\n\n\nNew segments from current chunk:\nJohn: ok so main thing today is the phoenix project timeline and also client delta feedback [information]\nSara: oh yeah that email was kind of concerning [information]\nSara: mostly the scope part they added analytics dashboard out of nowhere [information]\nJohn: right so first timeline where are we with backend api work [question]\nMike: so the auth service is done mostly except the refresh token logic which broke yesterday but i fixed i think [information]\nMike: pushed but the tests are red but not real red just flaky red [information]\n\nPrevious actions:\nNone', additional_kwargs={}, response_metadata={})])
-00:15:43 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
-00:15:44 [INFO] ContextResolver: Created 0 new actions from this chunk
-00:15:44 [INFO] ContextResolver: 0 unresolved references remaining
-00:15:44 [INFO] [31m[TIMING] Node context_resolver: completed in 7.28s[0m
-00:15:44 [INFO] [TIMING] Node increment_chunk: started
-00:15:44 [INFO] IncrementChunk: Moving to chunk 3
-00:15:44 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
-00:15:44 [INFO] [TIMING] Node relevance_gate: started
-00:15:44 [INFO] RelevanceGate: Checking chunk 3/8
-00:15:44 [INFO] AFC is enabled with max remote calls: 10.
-00:15:44 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent "HTTP/1.1 200 OK"
-00:15:44 [INFO] RelevanceGate: Chunk 3 -> YES
-00:15:44 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.87s[0m
-00:15:44 [INFO] [TIMING] Node local_extractor: started
-00:15:44 [INFO] LocalExtractor: Extracting from chunk 3
-00:15:44 [INFO] AFC is enabled with max remote calls: 10.
-00:15:52 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-00:15:52 [INFO] LocalExtractor: Extracted 8 segments
-00:15:52 [INFO] [31m[TIMING] Node local_extractor: completed in 7.29s[0m
-00:15:52 [INFO] [TIMING] Node evidence_normalizer: started
-00:15:52 [INFO] EvidenceNormalizer: Normalizing 8 segments
-00:15:52 [INFO] EvidenceNormalizer: Dropping meta-action segment: 'writing that down'
-00:15:52 [INFO] EvidenceNormalizer: 7 segments after normalization
-00:15:52 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
-00:15:52 [INFO] [TIMING] Node context_resolver: started
-00:15:52 [INFO] ContextResolver: Resolving context for 7 new segments
-00:15:52 [INFO] ContextResolver: 0 unresolved references, 0 active topics
-00:15:52 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~431 chars, 0 previous actions)...
-00:15:52 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
-('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content='Context:\n\n\nNew segments from current chunk:\nSara: wait flaky red is still red mike [information]\nMike: yeah but emotionally green [information]\nJohn: ok ok lets circle back to tests later [action_item]\nPriya: timeline wise backend how long mike [question]\nMike: if no more surprise fires maybe 10 days dev plus testing time which is theoretical [information]\nSara: frontend i need a week after api stabilizes [information]\nJohn: ok so roughly end of month internal [decision]\n\nPrevious actions:\nNone', additional_kwargs={}, response_metadata={})])
-00:15:56 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
-00:15:56 [INFO] ContextResolver: Created 1 new actions from this chunk
-00:15:56 [INFO] ContextResolver: 0 unresolved references remaining
-00:15:56 [INFO] [31m[TIMING] Node context_resolver: completed in 4.03s[0m
-00:15:56 [INFO] [TIMING] Node increment_chunk: started
-00:15:56 [INFO] IncrementChunk: Moving to chunk 4
-00:15:56 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
-00:15:56 [INFO] [TIMING] Node relevance_gate: started
-00:15:56 [INFO] RelevanceGate: Checking chunk 4/8
-00:15:56 [INFO] AFC is enabled with max remote calls: 10.
-00:15:57 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent "HTTP/1.1 200 OK"
-00:15:57 [INFO] RelevanceGate: Chunk 4 -> YES
-00:15:57 [INFO] [31m[TIMING] Node relevance_gate: completed in 1.04s[0m
-00:15:57 [INFO] [TIMING] Node local_extractor: started
-00:15:57 [INFO] LocalExtractor: Extracting from chunk 4
-00:15:57 [INFO] AFC is enabled with max remote calls: 10.
-00:16:03 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-00:16:03 [INFO] LocalExtractor: Extracted 8 segments
-00:16:03 [INFO] [31m[TIMING] Node local_extractor: completed in 6.64s[0m
-00:16:03 [INFO] [TIMING] Node evidence_normalizer: started
-00:16:03 [INFO] EvidenceNormalizer: Normalizing 8 segments
-00:16:03 [INFO] EvidenceNormalizer: 8 segments after normalization
-00:16:03 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
-00:16:03 [INFO] [TIMING] Node context_resolver: started
-00:16:03 [INFO] ContextResolver: Resolving context for 8 new segments
-00:16:03 [INFO] ContextResolver: 0 unresolved references, 2 active topics
-00:16:03 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~724 chars, 1 previous actions)...
-00:16:03 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
-('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content="Context:\n\nActive topics:\n- ok ok lets circle back to tests later: {'speaker': 'John', 'chunk': 2, 'resolved': True}\n- ok so roughly end of month internal: {'speaker': 'John', 'chunk': 2, 'resolved': False}\n\n\nNew segments from current chunk:\nPriya: client wont that [information]\nJohn: yeah but reality [information]\nSara: should we send them an update email today [suggestion]\nJohn: yes good point we need to reset expectations [decision]\nMike: who sends that i sent the last one and they ghosted [question]\nSara: maybe better from john this time [suggestion]\nJohn: ok ill draft it after this [action_item]\nPriya: can you include the phased delivery plan [suggestion]\n\nPrevious actions:\n0. Circle back to discuss the status and resolution of flaky tests. (assignee: John, deadline: later)", additional_kwargs={}, response_metadata={})])
-00:16:08 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
-00:16:08 [INFO] ContextResolver: Created 1 new actions from this chunk
-00:16:08 [INFO] ContextResolver: 0 unresolved references remaining
-00:16:08 [INFO] [31m[TIMING] Node context_resolver: completed in 4.10s[0m
-00:16:08 [INFO] [TIMING] Node increment_chunk: started
-00:16:08 [INFO] IncrementChunk: Moving to chunk 5
-00:16:08 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
-00:16:08 [INFO] [TIMING] Node relevance_gate: started
-00:16:08 [INFO] RelevanceGate: Checking chunk 5/8
-00:16:08 [INFO] AFC is enabled with max remote calls: 10.
-00:16:08 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent "HTTP/1.1 200 OK"
-00:16:08 [INFO] RelevanceGate: Chunk 5 -> YES
-00:16:08 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.95s[0m
-00:16:08 [INFO] [TIMING] Node local_extractor: started
-00:16:08 [INFO] LocalExtractor: Extracting from chunk 5
-00:16:09 [INFO] AFC is enabled with max remote calls: 10.
-00:16:19 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-00:16:19 [INFO] LocalExtractor: Extracted 2 segments
-00:16:19 [INFO] [31m[TIMING] Node local_extractor: completed in 10.08s[0m
-00:16:19 [INFO] [TIMING] Node evidence_normalizer: started
-00:16:19 [INFO] EvidenceNormalizer: Normalizing 2 segments
-00:16:19 [INFO] EvidenceNormalizer: 2 segments after normalization
-00:16:19 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
-00:16:19 [INFO] [TIMING] Node context_resolver: started
-00:16:19 [INFO] ContextResolver: Resolving context for 2 new segments
-00:16:19 [INFO] ContextResolver: 0 unresolved references, 4 active topics
-00:16:19 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~620 chars, 2 previous actions)...
-00:16:19 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
-('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content="Context:\n\nActive topics:\n- ok so roughly end of month internal: {'speaker': 'John', 'chunk': 2, 'resolved': False}\n- yes good point we need to reset expectations: {'speaker': 'John', 'chunk': 3, 'resolved': False}\n- ok ill draft it after this: {'speaker': 'John', 'chunk': 3, 'resolved': True}\n\n\nNew segments from current chunk:\nSara: and mention scope change impact [information]\nMike: also can we schedule a bug bash session before release [suggestion]\n\nPrevious actions:\n0. Circle back to discuss the status and resolution of flaky tests. (assignee: John, deadline: later)\n1. Draft an update email to the client to reset expectations. (assignee: John, deadline: after this meeting)", additional_kwargs={}, response_metadata={})])
-00:16:23 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
-00:16:23 [INFO] ContextResolver: Created 0 new actions from this chunk
-00:16:23 [INFO] ContextResolver: 0 unresolved references remaining
-00:16:23 [INFO] [31m[TIMING] Node context_resolver: completed in 4.04s[0m
-00:16:23 [INFO] [TIMING] Node increment_chunk: started
-00:16:23 [INFO] IncrementChunk: Moving to chunk 6
-00:16:23 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
-00:16:23 [INFO] [TIMING] Node relevance_gate: started
-00:16:23 [INFO] RelevanceGate: Checking chunk 6/8
-00:16:23 [INFO] AFC is enabled with max remote calls: 10.
-00:16:23 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent "HTTP/1.1 200 OK"
-00:16:23 [INFO] RelevanceGate: Chunk 6 -> YES
-00:16:23 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.89s[0m
-00:16:23 [INFO] [TIMING] Node local_extractor: started
-00:16:23 [INFO] LocalExtractor: Extracting from chunk 6
-00:16:24 [INFO] AFC is enabled with max remote calls: 10.
-00:16:28 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-00:16:28 [INFO] LocalExtractor: Extracted 3 segments
-00:16:28 [INFO] [31m[TIMING] Node local_extractor: completed in 4.48s[0m
-00:16:28 [INFO] [TIMING] Node evidence_normalizer: started
-00:16:28 [INFO] EvidenceNormalizer: Normalizing 3 segments
-00:16:28 [INFO] EvidenceNormalizer: 3 segments after normalization
-00:16:28 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
-00:16:28 [INFO] [TIMING] Node context_resolver: started
-00:16:28 [INFO] ContextResolver: Resolving context for 3 new segments
-00:16:28 [INFO] ContextResolver: 0 unresolved references, 4 active topics
-00:16:28 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~653 chars, 2 previous actions)...
-00:16:28 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
-('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content="Context:\n\nActive topics:\n- ok so roughly end of month internal: {'speaker': 'John', 'chunk': 2, 'resolved': False}\n- yes good point we need to reset expectations: {'speaker': 'John', 'chunk': 3, 'resolved': False}\n- ok ill draft it after this: {'speaker': 'John', 'chunk': 3, 'resolved': True}\n\n\nNew segments from current chunk:\nJohn: next topic infrastructure cost spike [information]\nMike: yeah sorry about that logs went into infinite mode [information]\nJohn: did we fix it [question]\n\nPrevious actions:\n0. Circle back to discuss the status and resolution of flaky tests. (assignee: John, deadline: later)\n1. Draft an update email to the client to reset expectations. (assignee: John, deadline: after this meeting)", additional_kwargs={}, response_metadata={})])
-00:16:32 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
-00:16:32 [INFO] ContextResolver: Created 0 new actions from this chunk
-00:16:32 [INFO] ContextResolver: 0 unresolved references remaining
-00:16:32 [INFO] [31m[TIMING] Node context_resolver: completed in 4.03s[0m
-00:16:32 [INFO] [TIMING] Node increment_chunk: started
-00:16:32 [INFO] IncrementChunk: Moving to chunk 7
-00:16:32 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
-00:16:32 [INFO] [TIMING] Node relevance_gate: started
-00:16:32 [INFO] RelevanceGate: Checking chunk 7/8
-00:16:32 [INFO] AFC is enabled with max remote calls: 10.
-00:16:33 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent "HTTP/1.1 200 OK"
-00:16:33 [INFO] RelevanceGate: Chunk 7 -> YES
-00:16:33 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.85s[0m
-00:16:33 [INFO] [TIMING] Node local_extractor: started
-00:16:33 [INFO] LocalExtractor: Extracting from chunk 7
-00:16:33 [INFO] AFC is enabled with max remote calls: 10.
-00:16:40 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-00:16:40 [INFO] LocalExtractor: Extracted 6 segments
-00:16:40 [INFO] [31m[TIMING] Node local_extractor: completed in 6.71s[0m
-00:16:40 [INFO] [TIMING] Node evidence_normalizer: started
-00:16:40 [INFO] EvidenceNormalizer: Normalizing 6 segments
-00:16:40 [INFO] EvidenceNormalizer: 6 segments after normalization
-00:16:40 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
-00:16:40 [INFO] [TIMING] Node context_resolver: started
-00:16:40 [INFO] ContextResolver: Resolving context for 6 new segments
-00:16:40 [INFO] ContextResolver: 0 unresolved references, 4 active topics
-00:16:40 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~866 chars, 2 previous actions)...
-00:16:40 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
-('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content="Context:\n\nActive topics:\n- ok so roughly end of month internal: {'speaker': 'John', 'chunk': 2, 'resolved': False}\n- yes good point we need to reset expectations: {'speaker': 'John', 'chunk': 3, 'resolved': False}\n- ok ill draft it after this: {'speaker': 'John', 'chunk': 3, 'resolved': True}\n\n\nNew segments from current chunk:\nMike: yeah log level back to normal we were in debug in prod which is not ideal [information]\nSara: do we need to inform finance [question]\nJohn: probably ill talk to them [action_item]\nMike: also monitoring alerts didnt fire which is concerning [information]\nPriya: we should create a task for fixing alert rules [suggestion]\nJohn: priya can you track that [action_item]\n\nPrevious actions:\n0. Circle back to discuss the status and resolution of flaky tests. (assignee: John, deadline: later)\n1. Draft an update email to the client to reset expectations. (assignee: John, deadline: after this meeting)", additional_kwargs={}, response_metadata={})])
-00:16:44 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
-00:16:44 [INFO] ContextResolver: Created 2 new actions from this chunk
-00:16:44 [INFO] ContextResolver: 0 unresolved references remaining
-00:16:44 [INFO] [31m[TIMING] Node context_resolver: completed in 4.40s[0m
-00:16:44 [INFO] [TIMING] Node increment_chunk: started
-00:16:44 [INFO] IncrementChunk: Moving to chunk 8
-00:16:44 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
-00:16:44 [INFO] [TIMING] Node relevance_gate: started
-00:16:44 [INFO] RelevanceGate: Checking chunk 8/8
-00:16:44 [INFO] AFC is enabled with max remote calls: 10.
-00:16:45 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent "HTTP/1.1 200 OK"
-00:16:45 [INFO] RelevanceGate: Chunk 8 -> YES
-00:16:45 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.97s[0m
-00:16:45 [INFO] [TIMING] Node local_extractor: started
-00:16:45 [INFO] LocalExtractor: Extracting from chunk 8
-00:16:45 [INFO] AFC is enabled with max remote calls: 10.
-00:16:54 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-00:16:54 [INFO] LocalExtractor: Extracted 7 segments
-00:16:54 [INFO] [31m[TIMING] Node local_extractor: completed in 8.96s[0m
-00:16:54 [INFO] [TIMING] Node evidence_normalizer: started
-00:16:54 [INFO] EvidenceNormalizer: Normalizing 7 segments
-00:16:54 [INFO] EvidenceNormalizer: 7 segments after normalization
-00:16:54 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
-00:16:54 [INFO] [TIMING] Node context_resolver: started
-00:16:54 [INFO] ContextResolver: Resolving context for 7 new segments
-00:16:54 [INFO] ContextResolver: 0 unresolved references, 6 active topics
-00:16:54 [INFO] ContextResolver: Calling LLM (timeout=180s, prompt ~1080 chars, 4 previous actions)...
-00:16:54 [INFO] [CONTEXT_RESOLVER_PROMPT] --- Part 1 (message) ---
-('messages', [SystemMessage(content='You are resolving references and linking actions across meeting chunks.\n\nYour tasks:\n1. Complete references: If a segment says "I\'ll do that", link it to the most recent relevant topic\n2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I\'ll handle")\n3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions\n4. Track topics: Maintain active topic memory\n\nFor each new segment, determine:\n- Does it complete a previous unresolved reference? (provide the link)\n- Does it create a new action that should be merged with existing ones?\n- Does it add deadline/assignee info to existing actions?\n\nReturn JSON with:\n{\n  "resolved_segments": [...],\n  "new_actions": [...],\n  "updated_actions": [...],\n  "still_unresolved": [...]\n}', additional_kwargs={}, response_metadata={}), HumanMessage(content="Context:\n\nActive topics:\n- ok ill draft it after this: {'speaker': 'John', 'chunk': 3, 'resolved': True}\n- probably ill talk to them: {'speaker': 'John', 'chunk': 6, 'resolved': True}\n- priya can you track that: {'speaker': 'John', 'chunk': 6, 'resolved': True}\n\n\nNew segments from current chunk:\nPriya: yes adding to list [action_item]\nSara: small question are we still doing the accessibility review [question]\nJohn: oh good point we skipped last sprint [information]\nMike: yeah sorry i was supposed to check color contrast thing [information]\nSara: lets not forget that the client mentioned it in kickoff [information]\nJohn: ok add accessibility review to phase one [action_item]\nPriya: noted [agreement]\n\nPrevious actions:\n0. Circle back to discuss the status and resolution of flaky tests. (assignee: John, deadline: later)\n1. Draft an update email to the client to reset expectations. (assignee: John, deadline: after this meeting)\n2. Talk to finance about the log level issue and its implications. (assignee: John, deadline: None)\n3. Create a task for fixing the monitoring alert rules that didn't fire. (assignee: Priya, deadline: None)", additional_kwargs={}, response_metadata={})])
-00:16:57 [INFO] HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
-00:16:57 [INFO] ContextResolver: Created 2 new actions from this chunk
-00:16:57 [INFO] ContextResolver: 0 unresolved references remaining
-00:16:57 [INFO] [31m[TIMING] Node context_resolver: completed in 3.45s[0m
-00:16:57 [INFO] [TIMING] Node increment_chunk: started
-00:16:57 [INFO] IncrementChunk: Moving to chunk 9
-00:16:57 [INFO] [31m[TIMING] Node increment_chunk: completed in 0.00s[0m
-00:16:57 [INFO] [TIMING] Node relevance_gate: started
-00:16:57 [INFO] RelevanceGate: All chunks processed, ending workflow
-00:16:57 [INFO] [31m[TIMING] Node relevance_gate: completed in 0.00s[0m
-00:16:57 [INFO] [TIMING] Node global_deduplicator: started
-00:16:57 [INFO] GlobalDeduplicator: Processing 6 actions
-00:16:57 [INFO] GlobalDeduplicator: Reduced 6 -> 5 actions
-00:16:57 [INFO] [31m[TIMING] Node global_deduplicator: completed in 0.00s[0m
-00:16:57 [INFO] [TIMING] Node action_finalizer: started
-00:16:57 [INFO] ActionFinalizer: Finalizing 5 actions
-00:16:57 [INFO] ActionFinalizer: Finalized 5 actions (source_spans, meeting_window)
-00:16:57 [INFO] [ACTION] #1 description=Circle back to discuss the status and resolution of flaky tests. | source_spans=['53e19f234be4'] | meeting_window=[2, 2]
-00:16:57 [INFO] [ACTION] #2 description=Draft an update email to the client to reset expectations. | source_spans=['a03d291a2367'] | meeting_window=[3, 3]
-00:16:57 [INFO] [ACTION] #3 description=Talk to finance about the log level issue and its implications. | source_spans=['e2e220fe25a2'] | meeting_window=[6, 6]
-00:16:57 [INFO] [ACTION] #4 description=Create a task for fixing the monitoring alert rules that didn't fire. | source_spans=['0e928d2a36c9'] | meeting_window=[6, 6]
-00:16:57 [INFO] [ACTION] #5 description=Add the accessibility review to phase one to the task list. | source_spans=['e30968a43730', '17560357b510'] | meeting_window=[7, 7]
-00:16:57 [INFO] [31m[TIMING] Node action_finalizer: completed in 0.00s[0m
-00:16:57 [INFO] Extraction complete: 5 actions extracted
-00:16:57 [INFO] Writing output to: output_small.json
-00:16:57 [INFO] Done. Extracted 5 action(s).
-00:16:57 [INFO] Results saved to output_small.json
-00:16:57 [INFO] Log saved to output_log.txt
+
+John: also quick question code review process are we actually doing it
+
+Mike: doing it loosely
+
+Sara: very loosely
+
+Priya: should we formalize it before release
+21:39:35 [INFO] Segmenter: Chunk index: 160, length: 699
+21:39:35 [INFO] Segmenter: Chunk text: John: yeah at minimum two approvals before merge to main
+
+Mike: two might slow us down
+
+Sara: that is the point mike
+
+Mike: fair point
+
+John: and no self approvals
+
+Mike: who would do that
+
+Sara: you have before mike
+
+Mike: that was one time and it was a typo fix
+
+Sara: a production typo
+
+John: okay lets focus
+
+Priya: should we be doing sprint retrospectives we kind of stopped
+
+John: oh yeah we did stop
+
+Sara: after the one where everyone complained and nothing changed
+
+Mike: that was cathartic though
+
+John: lets do a retro before release short one
+
+Priya: ill set it up
+
+Sara: maybe thirty minutes max
+
+John: agreed
+
+Mike: can we have virtual snacks
+
+Sara: i will bring a photo of a croissant
+21:39:35 [INFO] Segmenter: Chunk index: 180, length: 693
+21:39:35 [INFO] Segmenter: Chunk text: Mike: perfect
+
+John: one more thing have we synced with product on these scope decisions
+
+Sara: i dont think so
+
+Mike: product knows about this project right
+
+John: yes mike they do
+
+Mike: just checking
+
+Sara: we should loop in maya from product before sending client email
+
+John: good point ill add her to the email thread
+
+Priya: noted
+
+Mike: are we sure maya is not on vacation she seemed stressed last week
+
+Sara: shes usually in slack
+
+John: ill just ping her after this call
+
+Priya: good plan
+
+Mike: random but standup time tomorrow same
+
+Sara: yes 9 30
+
+Mike: 9 30 or 9 15 i wrote 9 15 somewhere
+
+Priya: calendar says 9 30
+
+John: 9 30
+
+Sara: okay
+
+John: any risks we havent talked about
+21:39:35 [INFO] Segmenter: Chunk index: 200, length: 935
+21:39:35 [INFO] Segmenter: Chunk text: Mike: integration with payment gateway still using sandbox might behave differently live
+
+Sara: oh thats scary
+
+Priya: do we need extra testing window
+
+John: yes good call
+
+Sara: what does extra testing window mean specifically
+
+John: like a week of testing just on payment integration
+
+Mike: we could do that in staging with test cards
+
+Priya: does the payment provider have a testing guide
+
+Mike: yeah they have sandbox docs ill dig those up
+
+Sara: also what happens if a payment fails after we go live
+
+Mike: we have error handling but i havent tested the retry logic
+
+John: test the retry logic mike
+
+Mike: yes adding to list
+
+Priya: should we also test refund flow
+
+Mike: oh thats a good one refund might behave differently in prod
+
+Sara: i had a nightmare about that literally
+
+John: the refund flow
+
+Sara: yeah the numbers were going backwards
+
+Mike: thats technically how refunds work
+
+Sara: in the dream it was my bank account
+21:39:35 [INFO] Segmenter: Chunk index: 220, length: 716
+21:39:35 [INFO] Segmenter: Chunk text: John: okay lets keep moving
+
+Priya: ill add payment flow edge cases to the test plan
+
+Mike: good idea
+
+Sara: and please document what test card numbers to use
+
+Mike: will add that to the runbook
+
+Mike: sorry one second my screen just went black no wait its back
+
+Sara: ASR tools are gonna hate this meeting
+
+John: haha
+
+Priya: do we have owner for documentation
+
+Sara: oh shoot not really
+
+Mike: docs are a social construct
+
+John: sara can you own user guide draft
+
+Sara: yeah okay but need inputs from you both
+
+Mike: sure
+
+Priya: we also need release checklist
+
+John: right
+
+Sara: coffee break when
+
+Mike: now
+
+John: focus mike
+
+Sara: sorry someone said something about a banana earlier or was that another meeting
+21:39:35 [INFO] Segmenter: Chunk index: 240, length: 821
+21:39:35 [INFO] Segmenter: Chunk text: Priya: i think that was grocery delivery
+
+Mike: yeah ignore
+
+John: actually before we wrap let me make sure we covered onboarding flow
+
+Sara: oh right new user onboarding we never properly tested that
+
+Mike: it works if you do everything right
+
+Sara: thats not how users work
+
+Mike: fair point
+
+Priya: are there edge cases like duplicate email signup
+
+Mike: probably handled but let me verify
+
+John: add that to the test plan
+
+Priya: done
+
+Sara: also what about mobile responsiveness
+
+Mike: responsive css is in but i havent tested on actual mobile
+
+Sara: i can do a quick check on my phone
+
+Mike: that would be great
+
+John: put that in the qa list
+
+Priya: adding
+
+Sara: oh and loading states for slow connections
+
+Mike: those are placeholders right now
+
+Sara: yeah a timeout message would be better than infinite spinner
+21:39:35 [INFO] Segmenter: Chunk index: 260, length: 768
+21:39:35 [INFO] Segmenter: Chunk text: Mike: i can add a thirty second timeout with a friendly message
+
+John: yes do that
+
+Priya: logged
+
+Mike: also error boundaries i added some but not everywhere
+
+John: is everything crashing without them
+
+Mike: only gracefully
+
+Sara: thats something
+
+Mike: ill do a pass and add them to critical components
+
+John: good
+
+Priya: ill note that as a pre-release blocker
+
+Mike: fair
+
+Sara: while were at it what about the session expiry handling
+
+Mike: it redirects to login i think
+
+Sara: you think or you know
+
+Mike: ill confirm today
+
+John: yes please confirm
+
+Priya: adding session expiry check to qa list
+
+Mike: also forgot to mention password reset flow hasnt been end to end tested yet
+
+John: that needs to be done before release
+
+Mike: agreed putting it high priority
+21:39:35 [INFO] Segmenter: Chunk index: 280, length: 598
+21:39:35 [INFO] Segmenter: Chunk text: Priya: noted
+
+John: okay wrapping up action recap um wait did we talk about security review
+
+Sara: oh no
+
+Mike: oh no squared
+
+John: we need at least internal review
+
+Priya: ill check with security team
+
+Mike: also backup strategy for database i dont remember if we tested restore
+
+Sara: that sentence made me anxious
+
+John: yeah lets schedule test restore
+
+Priya: adding
+
+Mike: sorry audio glitching robotic voice mode
+
+Sara: sounds like a transformer
+
+John: okay anything else
+
+Sara: nope
+
+Mike: all good
+
+Priya: done
+
+John: alright thanks everyone talk tomorrow
+
+Sara: bye
+
+Mike: bye
+
+Priya: bye
+21:39:35 [INFO] Segmenter: Created 15 chunks
+21:39:35 [INFO] [31m[TIMING] Node segmenter: completed in 0.00s[0m
+21:39:35 [INFO] [TIMING] Node parallel_extractor: started
+21:39:35 [INFO] ParallelExtractor: 15/15 chunks relevant, 0 skipped by keyword filter
+21:39:35 [INFO] ParallelExtractor: Launching 15 concurrent extraction tasks
+21:39:36 [INFO] AFC is enabled with max remote calls: 10.
+21:39:36 [INFO] AFC is enabled with max remote calls: 10.
+21:39:36 [INFO] AFC is enabled with max remote calls: 10.
+21:39:36 [INFO] AFC is enabled with max remote calls: 10.
+21:39:36 [INFO] AFC is enabled with max remote calls: 10.
+21:39:36 [INFO] AFC is enabled with max remote calls: 10.
+21:39:45 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:39:45 [INFO] ParallelExtractor: Chunk 1 completed, 7 segments
+21:39:45 [INFO] AFC is enabled with max remote calls: 10.
+21:39:51 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:39:51 [INFO] ParallelExtractor: Chunk 4 completed, 20 segments
+21:39:51 [INFO] AFC is enabled with max remote calls: 10.
+21:39:53 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:39:53 [INFO] ParallelExtractor: Chunk 3 completed, 12 segments
+21:39:53 [INFO] AFC is enabled with max remote calls: 10.
+21:39:55 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:39:55 [INFO] ParallelExtractor: Chunk 5 completed, 17 segments
+21:39:55 [INFO] AFC is enabled with max remote calls: 10.
+21:39:56 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:39:56 [WARNING] Extractor: Chunk 2 segment 5 has empty text, skipping
+21:39:56 [INFO] ParallelExtractor: Chunk 2 completed, 5 segments
+21:39:56 [INFO] AFC is enabled with max remote calls: 10.
+21:39:58 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:39:58 [WARNING] Extractor: Chunk 6 segment 2 has empty text, skipping
+21:39:58 [WARNING] Extractor: Chunk 6 (relevance=3) attempt 1 yielded only 2 segment(s) (expected >= 4, 20 turns) — retrying
+21:39:58 [INFO] AFC is enabled with max remote calls: 10.
+21:40:03 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:03 [INFO] ParallelExtractor: Chunk 7 completed, 10 segments
+21:40:03 [INFO] AFC is enabled with max remote calls: 10.
+21:40:05 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:05 [INFO] ParallelExtractor: Chunk 9 completed, 10 segments
+21:40:05 [INFO] AFC is enabled with max remote calls: 10.
+21:40:08 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:08 [INFO] ParallelExtractor: Chunk 10 completed, 18 segments
+21:40:08 [INFO] AFC is enabled with max remote calls: 10.
+21:40:10 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:10 [INFO] ParallelExtractor: Chunk 8 completed, 17 segments
+21:40:10 [INFO] AFC is enabled with max remote calls: 10.
+21:40:11 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:11 [INFO] ParallelExtractor: Chunk 11 completed, 13 segments
+21:40:14 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:14 [INFO] ParallelExtractor: Chunk 6 completed, 20 segments
+21:40:17 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:17 [INFO] ParallelExtractor: Chunk 12 completed, 5 segments
+21:40:20 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:20 [INFO] ParallelExtractor: Chunk 13 completed, 14 segments
+21:40:22 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:22 [INFO] ParallelExtractor: Chunk 15 completed, 6 segments
+21:40:24 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:24 [INFO] ParallelExtractor: Chunk 14 completed, 13 segments
+21:40:24 [INFO] ParallelExtractor: 187 total segments from 15 relevant chunks
+21:40:24 [INFO] [31m[TIMING] Node parallel_extractor: completed in 48.60s[0m
+21:40:24 [INFO] [TIMING] Node evidence_normalizer: started
+21:40:24 [INFO] EvidenceNormalizer: Normalizing 187 segments
+21:40:24 [INFO] EvidenceNormalizer: Dropping meta-action segment: 'writing that down'
+21:40:24 [INFO] EvidenceNormalizer: Dropping duplicate segment: 'works'
+21:40:24 [INFO] EvidenceNormalizer: Dropping duplicate segment: 'yes adding to list'
+21:40:24 [INFO] EvidenceNormalizer: 184 segments after normalization
+21:40:24 [INFO] EvidenceNormalizer: Created 40 action items from normalized segments
+21:40:24 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.01s[0m
+21:40:24 [INFO] [TIMING] Node cross_chunk_resolver: started
+21:40:24 [INFO] CrossChunkResolver: Reviewing 40 actions across 15 chunks
+21:40:24 [INFO] AFC is enabled with max remote calls: 10.
+21:40:43 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:43 [INFO] CrossChunkResolver: 5 merge group(s), 3 update(s)
+21:40:43 [INFO] CrossChunkResolver: 40 actions → 35 after resolution
+21:40:43 [INFO] [31m[TIMING] Node cross_chunk_resolver: completed in 18.96s[0m
+21:40:43 [INFO] [TIMING] Node global_deduplicator: started
+21:40:43 [INFO] GlobalDeduplicator: Processing 35 actions
+21:40:43 [INFO] GlobalDeduplicator: Reduced 35 -> 33 actions
+21:40:43 [INFO] [31m[TIMING] Node global_deduplicator: completed in 0.00s[0m
+21:40:43 [INFO] [TIMING] Node action_finalizer: started
+21:40:43 [INFO] ActionFinalizer: Finalizing 33 actions
+21:40:43 [INFO] ActionFinalizer: Finalized 33 actions (source_spans, meeting_window)
+21:40:43 [INFO] [ACTION] #1 description=Define the Minimum Viable Product (MVP) for the Client Delta delivery, ensuring it only includes a summary as per John's decision, to prevent scope creep and ensure clarity on core features. | source_spans=['890d427e871b'] | meeting_window=[2, 2]
+21:40:43 [INFO] [ACTION] #2 description=Note down John's decision that the MVP should only include a summary. | source_spans=['12d5ca89a9dc'] | meeting_window=[3, 3]
+21:40:43 [INFO] [ACTION] #3 description=Ask Alex from the other team about his availability to provide QA support for the project. | source_spans=['5886f2eea711', 'b1c51165e479'] | meeting_window=[3, 3]
+21:40:43 [INFO] [ACTION] #4 description=Draft an update email to the client to reset expectations regarding the project timeline. | source_spans=['90545ca82fb5'] | meeting_window=[4, 4]
+21:40:43 [INFO] [ACTION] #5 description=Move the task of fixing the staging environment login to the top of his priority list. | source_spans=['1e4860599a2e', 'dc201413195e'] | meeting_window=[4, 4]
+21:40:43 [INFO] [ACTION] #6 description=Send the staging environment link to the team when it is ready (after the login issue is fixed). | source_spans=['d20f504d1a8f', '6b69e57f53a5'] | meeting_window=[4, 4]
+21:40:43 [INFO] [ACTION] #7 description=Schedule a bug bash session. | source_spans=['b46c394067d8'] | meeting_window=[5, 5]
+21:40:43 [INFO] [ACTION] #8 description=Priya should add the task for Mike to write a deploy runbook to Mike's task list. | source_spans=['faf312936740'] | meeting_window=[5, 5]
+21:40:43 [INFO] [ACTION] #9 description=Mike should document the production deployment process. | source_spans=['25b6c7a15dfb', '7836a7974d4f'] | meeting_window=[5, 5]
+21:40:43 [INFO] [ACTION] #10 description=Add task to list to talk to the infrastructure team about the database migration issue related to rollbacks. | source_spans=['b8d2a63ba55b'] | meeting_window=[6, 6]
+21:40:43 [INFO] [ACTION] #11 description=Find time to schedule the dry run rollback in the staging environment. | source_spans=['fe9d71e32d08'] | meeting_window=[6, 6]
+21:40:43 [INFO] [ACTION] #12 description=John will talk to the finance department to inform them about the debug in production issue. | source_spans=['cff9736cbcfd'] | meeting_window=[7, 7]
+21:40:43 [INFO] [ACTION] #13 description=Add the accessibility review to Phase One of the project plan. | source_spans=['1935f82e7728'] | meeting_window=[7, 7]
+21:40:43 [INFO] [ACTION] #14 description=Priya needs to create a task to fix the monitoring alert rules that failed to fire during the debug in production incident. | source_spans=['ead0a9cedf1d', '7b3a4280d85b'] | meeting_window=[7, 7]
+21:40:43 [INFO] [ACTION] #15 description=Set up a short sprint retrospective before the release. | source_spans=['b6f0bf02f657'] | meeting_window=[8, 8]
+21:40:43 [INFO] [ACTION] #16 description=Bring a photo of a croissant for the virtual snacks during the retrospective. | source_spans=['5d8ddca3086b'] | meeting_window=[8, 8]
+21:40:43 [INFO] [ACTION] #17 description=Add Maya from product to the client email thread. | source_spans=['c3980373311c'] | meeting_window=[9, 9]
+21:40:43 [INFO] [ACTION] #18 description=Ping Maya to check her availability and status. | source_spans=['0fcc9f2d2c16'] | meeting_window=[9, 9]
+21:40:43 [INFO] [ACTION] #19 description=Dig up the sandbox documentation from the payment provider, which can serve as a testing guide. | source_spans=['d68a3cebfca1'] | meeting_window=[10, 10]
+21:40:43 [INFO] [ACTION] #20 description=Mike needs to test the retry logic for payment failures. | source_spans=['e5d9f4f117e3'] | meeting_window=[10, 10]
+21:40:43 [INFO] [ACTION] #21 description=Priya will add payment flow edge cases to the test plan. | source_spans=['54807f436e53'] | meeting_window=[11, 11]
+21:40:43 [INFO] [ACTION] #22 description=Mike will add documentation about what test card numbers to use to the runbook. | source_spans=['3290a10d7c7a'] | meeting_window=[11, 11]
+21:40:43 [INFO] [ACTION] #23 description=Sara will own the user guide draft. | source_spans=['94f23c12fb9b'] | meeting_window=[11, 11]
+21:40:43 [INFO] [ACTION] #24 description=Verify if the duplicate email signup edge case is handled within the new user onboarding flow. | source_spans=['7bbfd4aca2d4'] | meeting_window=[12, 12]
+21:40:43 [INFO] [ACTION] #25 description=Add the task of verifying the duplicate email signup edge case for the new user onboarding flow to the test plan. | source_spans=['30e348a4b18d'] | meeting_window=[12, 12]
+21:40:43 [INFO] [ACTION] #26 description=Perform a quick check of the mobile responsiveness of the new user onboarding flow on an actual mobile device (phone). | source_spans=['0a844fdad8bc', 'ddcab471fd22'] | meeting_window=[12, 12]
+21:40:43 [INFO] [ACTION] #27 description=Add a thirty-second timeout with a friendly message. | source_spans=['cfa450cdab8c'] | meeting_window=[13, 13]
+21:40:43 [INFO] [ACTION] #28 description=Perform a pass to add error boundaries to critical components. | source_spans=['501bf13dc892', '9569fed605d7'] | meeting_window=[13, 13]
+21:40:43 [INFO] [ACTION] #29 description=Confirm the exact behavior of session expiry handling, specifically if it redirects to login. | source_spans=['2d1d714581d2'] | meeting_window=[13, 13]
+21:40:43 [INFO] [ACTION] #30 description=Add a task to the QA list to check session expiry handling. | source_spans=['345a7775a62b'] | meeting_window=[13, 13]
+21:40:43 [INFO] [ACTION] #31 description=Prioritize the end-to-end testing of the password reset flow. | source_spans=['cdcdea76bb5f'] | meeting_window=[13, 13]
+21:40:43 [INFO] [ACTION] #32 description=Priya will check with the security team regarding the internal security review. | source_spans=['5bbede222eee'] | meeting_window=[14, 14]
+21:40:43 [INFO] [ACTION] #33 description=Schedule a test restore for the database backup strategy. | source_spans=['74653ed075e9'] | meeting_window=[14, 14]
+21:40:43 [INFO] [31m[TIMING] Node action_finalizer: completed in 0.00s[0m
+21:40:43 [INFO] Extraction complete: 33 actions extracted
+21:40:43 [INFO] Writing output to: output_large_new.json
+21:40:43 [INFO] Done. Extracted 33 action(s).
+21:40:43 [INFO] Results saved to output_large_new.json
+21:40:43 [INFO] Log saved to output_log.txt

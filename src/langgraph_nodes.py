@@ -2,21 +2,34 @@
 import re
 import hashlib
 import logging
-from typing import Dict, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Dict, Any, List
+from pydantic import BaseModel as PydanticBaseModel
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.output_parsers import JsonOutputParser
 
 from .langgraph_state import GraphState
 from .langgraph_models import Segment, Action, ActionDetails
-from .langgraph_llm_config import (
-    RELEVANCE_GATE_CONFIG,
-    LOCAL_EXTRACTOR_CONFIG,
-    CONTEXT_RESOLVER_CONFIG,
-)
+from .langgraph_llm_config import LOCAL_EXTRACTOR_CONFIG, CROSS_CHUNK_RESOLVER_CONFIG
 
 logger = logging.getLogger(__name__)
 
+# Cap concurrent LLM API calls to avoid rate-limiting on high-chunk-count transcripts.
+# Raise this if your API tier supports higher concurrency.
+_MAX_PARALLEL_CHUNKS = 6
+
+# Retry thresholds for under-extracted chunks.
+# A retry is only attempted when BOTH conditions hold:
+#   1. The chunk's relevance score is high (the chunk looks substantive).
+#   2. The segment yield is below the minimum expected ratio.
+# This prevents wasting retries on legitimately quiet/social stretches of conversation.
+_MIN_SEGMENTS_PER_TURN_RATIO = 1 / 5    # expect at least 1 segment per 5 turns
+_HIGH_RELEVANCE_SCORE_THRESHOLD = 3     # score >= 3 means the chunk has multiple action signals
+_MAX_EXTRACTION_RETRIES = 2             # up to 2 extra attempts after the original
+
+
+# ===========================================================================
+# LLM FACTORY
+# ===========================================================================
 
 def create_llm(cfg: dict):
     """
@@ -79,139 +92,100 @@ def create_llm(cfg: dict):
         )
 
 
-def create_relevance_gate_llm():
-    """Create LLM configured for relevance gate node."""
-    return create_llm(RELEVANCE_GATE_CONFIG)
-
-
 def create_local_extractor_llm():
-    """Create LLM configured for local extractor node."""
+    """Create LLM configured for the (combined) extractor node."""
     return create_llm(LOCAL_EXTRACTOR_CONFIG)
 
 
-def create_context_resolver_llm():
-    """Create LLM configured for context resolver node."""
-    return create_llm(CONTEXT_RESOLVER_CONFIG)
+def create_cross_chunk_resolver_llm():
+    """Create LLM configured for the cross-chunk resolver node."""
+    return create_llm(CROSS_CHUNK_RESOLVER_CONFIG)
 
 
-def segmenter_node(state: GraphState) -> GraphState:
+# ===========================================================================
+# RULE-BASED RELEVANCE SCORING  (Change 2)
+# ===========================================================================
+
+_ACTION_KEYWORDS = [
+    "will", "should", "need to", "needs to", "going to",
+    "can you", "could you", "please", "follow up", "schedule",
+    "by when", "deadline", "i'll", "we'll", "let's",
+    "make sure", "track", "add to", "review", "fix", "update",
+]
+
+
+def _score_chunk_relevance(chunk_text: str) -> int:
     """
-    [1] SEGMENTER NODE
-    Role: Structural chunking only (NO AI)
-    Goal: Preserve conversational integrity.
-    Logic: Split by speaker turns, group into 8-15 turns per chunk
+    Count how many action-oriented keywords appear in the chunk.
+    Returns 0 for clearly irrelevant chunks (greetings, small-talk, tech glitches).
+    score >= 1 → process; score == 0 → skip.
     """
-    logger.info("Segmenter: Starting chunking...")
-    
-    transcript_raw = state.get("transcript_raw", "")
-    if not transcript_raw:
-        logger.warning("Segmenter: No transcript_raw in state")
-        return {**state, "chunks": [], "chunk_index": 0}
-    
-    # Split by speaker turns (format: "Speaker: text")
-    turn_pattern = re.compile(r'^([A-Za-z][A-Za-z0-9\s]+?):\s*(.+)$', re.MULTILINE)
-    turns = []
-    for match in turn_pattern.finditer(transcript_raw):
-        speaker = match.group(1).strip()
-        text = match.group(2).strip()
-        if text:  # Skip empty turns
-            turns.append(f"{speaker}: {text}")
-    
-    logger.info(f"Segmenter: Found {len(turns)} speaker turns")
-    
-    # Group into chunks of 8-15 turns
-    chunk_size = 8  # Target size
-    chunks = []
-    for i in range(0, len(turns), chunk_size):
-        chunk = "\n\n".join(turns[i:i+chunk_size])
-        logger.info(f"Segmenter: Chunk index: {i}, length: {len(chunk)}")
-        logger.info(f"Segmenter: Chunk text: {chunk}")
-        chunks.append(chunk)
-    
-    logger.info(f"Segmenter: Created {len(chunks)} chunks")
-    
-    return {
-        **state,
-        "chunks": chunks,
-        "chunk_index": 0,
-        "candidate_segments": [],
-        "unresolved_references": [],
-        "active_topics": {},
-        "merged_actions": [],
-        "emitted_text_spans": set(),
-    }
+    text = chunk_text.lower()
+    return sum(1 for kw in _ACTION_KEYWORDS if kw in text)
 
 
-def relevance_gate_node(state: GraphState) -> GraphState:
+# ===========================================================================
+# SINGLE-CHUNK EXTRACTOR  (thread-safe helper for parallel execution)
+# ===========================================================================
+
+class _SegmentExtraction(PydanticBaseModel):
+    segments: List[Dict[str, Any]]
+
+
+def _parse_segments(result: _SegmentExtraction, chunk_index: int) -> List[Segment]:
     """
-    [2] RELEVANCE GATE NODE
-    Role: Current GLM4.7Flash LLM filter
-    Question: Does this chunk contain work-relevant operational content?
-    Return: YES / NO
+    Convert a raw _SegmentExtraction result into typed Segment objects.
+    Segments with empty text are skipped and logged.
+    Extracted so retry attempts can call it without duplicating code.
     """
-    chunks = state.get("chunks", [])
-    chunk_index = state.get("chunk_index", 0)
-    
-    if chunk_index >= len(chunks):
-        logger.info("RelevanceGate: All chunks processed, ending workflow")
-        return {**state, "relevance_result": "DONE"}
-    
-    chunk = chunks[chunk_index]
-    logger.info(f"RelevanceGate: Checking chunk {chunk_index + 1}/{len(chunks)}")
-    
-    llm = create_relevance_gate_llm()
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are a filter for meeting transcripts. Determine if a chunk contains work-relevant operational content.
+    segments = []
+    for idx, seg_data in enumerate(result.segments):
+        text = seg_data.get("text", "")
+        if not text:
+            logger.warning("Extractor: Chunk %d segment %d has empty text, skipping", chunk_index + 1, idx)
+            continue
+        span_id = hashlib.md5(f"{chunk_index}_{idx}_{text}".encode()).hexdigest()[:12]
 
-RELEVANT content includes:
-- Tasks, assignments, action items
-- Decisions, plans, timelines
-- Technical/business discussions
-- Ownership, responsibilities
-- Deadlines, schedules
+        action_details = None
+        if seg_data.get("intent") == "action_item" and seg_data.get("action_details"):
+            ad_data = seg_data["action_details"]
+            raw_tags = ad_data.get("topic_tags") or []
+            action_details = ActionDetails(
+                description=ad_data.get("description"),
+                assignee=ad_data.get("assignee"),
+                deadline=ad_data.get("deadline"),
+                confidence=ad_data.get("confidence"),
+                topic_tags=[t.lower().strip() for t in raw_tags if isinstance(t, str) and t.strip()],
+                unresolved_reference=ad_data.get("unresolved_reference") if seg_data.get("context_unclear") else None,
+            )
 
-NOT RELEVANT content includes:
-- Greetings, small talk
-- Jokes, filler words
-- Technical glitches (audio issues, screen problems)
-- Off-topic conversations
+        segments.append(Segment(
+            speaker=seg_data.get("speaker", ""),
+            text=text,
+            intent=seg_data.get("intent", "information"),
+            resolved_context=seg_data.get("resolved_context", ""),
+            context_unclear=seg_data.get("context_unclear", False),
+            action_details=action_details,
+            span_id=span_id,
+            chunk_index=chunk_index,
+        ))
 
-Respond with ONLY "YES" or "NO" (no explanation)."""),
-        ("human", "Chunk:\n\n{chunk}"),
-    ])
-    
-    chain = prompt | llm | StrOutputParser()
-    result = chain.invoke({"chunk": chunk}).strip().upper()
-    
-    is_relevant = result.startswith("YES")
-    logger.info(f"RelevanceGate: Chunk {chunk_index + 1} -> {result}")
-    
-    return {**state, "relevance_result": "YES" if is_relevant else "NO"}
+    return segments
 
 
-def local_extractor_node(state: GraphState) -> GraphState:
+def _extract_single_chunk(chunk: str, chunk_index: int, relevance_score: int) -> List[Segment]:
     """
-    [3] LOCAL EXTRACTOR NODE
-    Role: Extract evidence from current chunk (NOT final truth)
-    Produces candidate segments with action details
+    Extract candidate segments from one chunk. Creates its own LLM instance so
+    it is safe to call concurrently from multiple threads.
+
+    Retry logic: if the chunk looks substantive (relevance_score >= threshold) but the
+    LLM returns suspiciously few segments (< min_expected), retry up to
+    _MAX_EXTRACTION_RETRIES times. This catches partial/truncated structured-output
+    responses without wasting retries on legitimately quiet stretches of conversation.
     """
-    chunks = state.get("chunks", [])
-    chunk_index = state.get("chunk_index", 0)
-    chunk = chunks[chunk_index]
-    
-    logger.info(f"LocalExtractor: Extracting from chunk {chunk_index + 1}")
-    
     llm = create_local_extractor_llm()
-    
-    # Use tool_use (function calling) for structured extraction — more reliable than
-    # json_mode with Claude, which can silently return empty/miskeyed fields.
-    from pydantic import BaseModel as PydanticBaseModel
-    
-    class SegmentExtraction(PydanticBaseModel):
-        segments: list[Dict[str, Any]]
-    
-    structured_llm = llm.with_structured_output(SegmentExtraction)
-    
+    structured_llm = llm.with_structured_output(_SegmentExtraction)
+
     prompt = ChatPromptTemplate.from_messages([
         ("system", """You are extracting work-relevant segments from a meeting transcript chunk.
 
@@ -226,54 +200,195 @@ For each segment, identify:
 - text: Exact text from transcript (must be exact substring)
 - intent: suggestion | information | question | decision | action_item | agreement | clarification
 - resolved_context: What this refers to (if applicable, else empty string)
-- context_unclear: true if reference cannot be resolved
+- context_unclear: true if reference cannot be resolved from THIS chunk alone
 - action_details: Only for action_item intent:
   - description: FULL, SELF-CONTAINED description of what needs to be done. Use context from the chunk to expand pronouns and references. BAD: "draft it", "writing that down", "add to list". GOOD: "Draft email to Client Delta to reset expectations, including phased delivery plan and scope change impact", "Note to circle back to flaky tests later", "Add task for fixing monitoring alert rules to list". Always include enough detail that someone reading only the description understands the action.
   - assignee: Who is responsible (name or role)
   - deadline: Timeline mentioned (e.g. "March 10", "after the meeting", "end of month") or null
   - confidence: 0.0-1.0
+  - topic_tags: 2-4 short lowercase keywords capturing the SUBJECT of the action, independent of verb and phrasing. These are used to match the same task if it is described differently in another part of the transcript. Examples: ["client", "email", "scope"] for anything about a client email; ["tests", "backend", "flaky"] for anything about fixing flaky tests; ["alert", "monitoring", "rules"] for anything about monitoring alerts. Use the same tags even if the description wording differs.
+  - unresolved_reference: ONLY when context_unclear=true — a short phrase describing what is being referenced that could not be resolved from this chunk alone. Example: if someone says "ill handle it" and "it" refers to something mentioned before this chunk, write the best guess of what "it" is (e.g. "the gateway migration task", "what John mentioned about the tests"). Leave null when context_unclear=false.
 
-CRITICAL for description: Resolve "it", "that", "this", "that thing" from nearby turns. If someone says "ill draft it after this", look for what "it" refers to (e.g. "update email to client") and write that in the description."""),
+CRITICAL for description: Resolve "it", "that", "this", "that thing" from nearby turns in this chunk. If someone says "ill draft it after this", look for what "it" refers to (e.g. "update email to client") and write that in the description."""),
         ("human", "Extract segments from this chunk:\n\n{chunk}"),
     ])
-    
+
     chain = prompt | structured_llm
-    result = chain.invoke({"chunk": chunk})
-    
-    # Convert to Segment objects
-    segments = []
-    for idx, seg_data in enumerate(result.segments):
-        text = seg_data.get("text", "")
-        if not text:
-            logger.warning(f"LocalExtractor: Skipping segment {idx} with empty text field: {seg_data}")
-            continue
-        span_id = hashlib.md5(f"{chunk_index}_{idx}_{text}".encode()).hexdigest()[:12]
-        
-        action_details = None
-        if seg_data.get("intent") == "action_item" and seg_data.get("action_details"):
-            ad_data = seg_data["action_details"]
-            action_details = ActionDetails(
-                description=ad_data.get("description"),
-                assignee=ad_data.get("assignee"),
-                deadline=ad_data.get("deadline"),
-                confidence=ad_data.get("confidence"),
+
+    # Chunks with fewer turns are expected to produce fewer segments.
+    # Count turns by the double-newline separator used by the segmenter.
+    turn_count = chunk.count("\n\n") + 1
+    min_expected = max(1, int(turn_count * _MIN_SEGMENTS_PER_TURN_RATIO))
+    # Only retry when the chunk looks substantive — prevents spurious retries on
+    # legitimately quiet or social stretches that correctly produce few segments.
+    should_retry_on_low_yield = relevance_score >= _HIGH_RELEVANCE_SCORE_THRESHOLD
+
+    best_segments: List[Segment] = []
+    for attempt in range(1, _MAX_EXTRACTION_RETRIES + 2):  # 1 original + up to N retries
+        try:
+            result = chain.invoke({"chunk": chunk})
+        except Exception as e:
+            logger.error(
+                "Extractor: Chunk %d attempt %d LLM call failed: %s",
+                chunk_index + 1, attempt, e,
             )
-        
-        segment = Segment(
-            speaker=seg_data.get("speaker", ""),
-            text=text,
-            intent=seg_data.get("intent", "information"),
-            resolved_context=seg_data.get("resolved_context", ""),
-            context_unclear=seg_data.get("context_unclear", False),
-            action_details=action_details,
-            span_id=span_id,
-            chunk_index=chunk_index,
+            if attempt <= _MAX_EXTRACTION_RETRIES:
+                continue
+            return best_segments
+
+        segments = _parse_segments(result, chunk_index)
+
+        if len(segments) > len(best_segments):
+            best_segments = segments
+
+        yield_ok = len(segments) >= min_expected
+        retries_left = attempt <= _MAX_EXTRACTION_RETRIES
+
+        if yield_ok or not should_retry_on_low_yield or not retries_left:
+            if not yield_ok:
+                logger.warning(
+                    "Extractor: Chunk %d (relevance=%d) yielded only %d segment(s) "
+                    "(expected >= %d, %d turns) after %d attempt(s) — using best result",
+                    chunk_index + 1, relevance_score, len(best_segments),
+                    min_expected, turn_count, attempt,
+                )
+            return best_segments
+
+        logger.warning(
+            "Extractor: Chunk %d (relevance=%d) attempt %d yielded only %d segment(s) "
+            "(expected >= %d, %d turns) — retrying",
+            chunk_index + 1, relevance_score, attempt,
+            len(segments), min_expected, turn_count,
         )
-        segments.append(segment)
-    
-    logger.info(f"LocalExtractor: Extracted {len(segments)} segments")
-    
-    return {**state, "candidate_segments": segments}
+
+    return best_segments
+
+
+# ===========================================================================
+# NODES
+# ===========================================================================
+
+def segmenter_node(state: GraphState) -> GraphState:
+    """
+    [1] SEGMENTER NODE
+    Role: Structural chunking only (NO AI)
+    Goal: Preserve conversational integrity.
+    Logic: Split by speaker turns, group into 20 turns per chunk.
+    """
+    logger.info("Segmenter: Starting chunking...")
+
+    transcript_raw = state.get("transcript_raw", "")
+    if not transcript_raw:
+        logger.warning("Segmenter: No transcript_raw in state")
+        return {**state, "chunks": [], "chunk_index": 0}
+
+    # Split by speaker turns (format: "Speaker: text")
+    turn_pattern = re.compile(r'^([A-Za-z][A-Za-z0-9\s]+?):\s*(.+)$', re.MULTILINE)
+    turns = []
+    for match in turn_pattern.finditer(transcript_raw):
+        speaker = match.group(1).strip()
+        text = match.group(2).strip()
+        if text:
+            turns.append(f"{speaker}: {text}")
+
+    logger.info("Segmenter: Found %d speaker turns", len(turns))
+
+    # 20 turns per chunk — large enough that most intra-chunk references resolve
+    # within the chunk, reducing the need for cross-chunk context resolution.
+    chunk_size = 20
+    chunks = []
+    for i in range(0, len(turns), chunk_size):
+        chunk = "\n\n".join(turns[i:i + chunk_size])
+        logger.info("Segmenter: Chunk index: %d, length: %d", i, len(chunk))
+        logger.info("Segmenter: Chunk text: %s", chunk)
+        chunks.append(chunk)
+
+    logger.info("Segmenter: Created %d chunks", len(chunks))
+
+    return {
+        **state,
+        "chunks": chunks,
+        "chunk_index": 0,
+        "candidate_segments": [],
+        "unresolved_references": [],
+        "active_topics": {},
+        "merged_actions": [],
+        "emitted_text_spans": set(),
+    }
+
+
+def parallel_extractor_node(state: GraphState) -> GraphState:
+    """
+    [2] PARALLEL EXTRACTOR NODE  (replaces relevance_gate + local_extractor + context_resolver)
+
+    Steps:
+      1. Score every chunk with the rule-based keyword filter (free, instant).
+      2. Submit all relevant chunks to a ThreadPoolExecutor for concurrent LLM extraction.
+      3. Collect all Segment objects; sort by original chunk order.
+
+    Wall time ≈ max(single_chunk_latency) instead of sum(all_chunk_latencies).
+    """
+    chunks = state.get("chunks", [])
+
+    # Rule-based relevance filter — no LLM cost.
+    # Compute the score once and keep it so it can be forwarded to the extractor
+    # for use in the retry guard.
+    scored = [(i, chunk, _score_chunk_relevance(chunk)) for i, chunk in enumerate(chunks)]
+    relevant = [(i, chunk, score) for i, chunk, score in scored if score >= 1]
+    skipped = len(chunks) - len(relevant)
+    logger.info(
+        "ParallelExtractor: %d/%d chunks relevant, %d skipped by keyword filter",
+        len(relevant), len(chunks), skipped,
+    )
+
+    if not relevant:
+        logger.info("ParallelExtractor: No relevant chunks found")
+        return {**state, "candidate_segments": []}
+
+    all_segments: List[Segment] = []
+    # Map chunk index → segment list for post-hoc anomaly detection
+    chunk_segment_map: Dict[int, List[Segment]] = {}
+    max_workers = min(len(relevant), _MAX_PARALLEL_CHUNKS)
+
+    logger.info("ParallelExtractor: Launching %d concurrent extraction tasks", len(relevant))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_chunk = {
+            executor.submit(_extract_single_chunk, chunk, idx, score): idx
+            for idx, chunk, score in relevant
+        }
+        for future in as_completed(future_to_chunk):
+            idx = future_to_chunk[future]
+            try:
+                segments = future.result()
+                all_segments.extend(segments)
+                chunk_segment_map[idx] = segments
+                logger.info("ParallelExtractor: Chunk %d completed, %d segments", idx + 1, len(segments))
+            except Exception as exc:
+                logger.error("ParallelExtractor: Chunk %d raised an exception: %s", idx + 1, exc)
+                chunk_segment_map[idx] = []
+
+    # Post-hoc anomaly check: warn if any chunk's yield is far below the average.
+    # This catches failures that survived all retries (e.g. model consistently
+    # returns empty responses for a specific chunk).
+    if chunk_segment_map:
+        avg = sum(len(s) for s in chunk_segment_map.values()) / len(chunk_segment_map)
+        if avg > 0:
+            for idx, segs in chunk_segment_map.items():
+                if len(segs) < avg * 0.3:
+                    logger.warning(
+                        "ParallelExtractor: Chunk %d has only %d segment(s) vs avg %.1f "
+                        "— may be under-extracted even after retries",
+                        idx + 1, len(segs), avg,
+                    )
+
+    # Restore original chunk order (as_completed returns in completion order)
+    all_segments.sort(key=lambda s: s.chunk_index)
+    logger.info(
+        "ParallelExtractor: %d total segments from %d relevant chunks",
+        len(all_segments), len(relevant),
+    )
+
+    return {**state, "candidate_segments": all_segments}
 
 
 # Utterances that acknowledge a task is being noted/recorded rather than
@@ -292,16 +407,16 @@ _META_ACTION_PATTERNS = re.compile(
 
 def evidence_normalizer_node(state: GraphState) -> GraphState:
     """
-    [4] EVIDENCE NORMALIZER NODE
+    [3] EVIDENCE NORMALIZER NODE
     Role: Structure cleaning (no heavy reasoning)
-    Standardizes verbs, trims ASR noise, removes duplicates, adds span IDs.
+    Standardizes verbs, trims ASR noise, removes duplicates.
     Also drops meta-action utterances (e.g. "adding", "noted") that acknowledge
     a task is being recorded rather than creating a new task.
+    After normalisation, converts all action_item segments into Action objects.
     """
     segments = state.get("candidate_segments", [])
-    logger.info(f"EvidenceNormalizer: Normalizing {len(segments)} segments")
+    logger.info("EvidenceNormalizer: Normalizing %d segments", len(segments))
 
-    # Verb normalization mapping
     verb_normalizations = {
         "take care of": "fix",
         "take care": "fix",
@@ -315,25 +430,24 @@ def evidence_normalizer_node(state: GraphState) -> GraphState:
     }
 
     normalized_segments = []
-    seen_texts = set()
+    seen_texts: set = set()
 
     for seg in segments:
-        # Trim ASR noise (common patterns)
+        # Trim ASR noise
         text = seg.text
         text = re.sub(r'\b(um|uh|er|ah|like|you know)\b', '', text, flags=re.IGNORECASE)
         text = re.sub(r'\s+', ' ', text).strip()
 
-        # Skip if empty after cleaning
         if not text:
             logger.info("EvidenceNormalizer: Dropping segment with empty text (original: %r)", seg.text)
             continue
 
-        # Drop meta-action utterances — they acknowledge recording, not a real task
+        # Drop meta-action utterances
         if seg.intent == "action_item" and _META_ACTION_PATTERNS.match(text):
             logger.info("EvidenceNormalizer: Dropping meta-action segment: %r", text)
             continue
 
-        # Skip duplicates within chunk (exact text match)
+        # Skip exact duplicates across all chunks
         text_lower = text.lower()
         if text_lower in seen_texts:
             logger.info("EvidenceNormalizer: Dropping duplicate segment: %r", text)
@@ -349,8 +463,7 @@ def evidence_normalizer_node(state: GraphState) -> GraphState:
                     raw_verb = replacement
                     break
 
-        # Create normalized segment
-        normalized_seg = Segment(
+        normalized_segments.append(Segment(
             speaker=seg.speaker,
             text=text,
             intent=seg.intent,
@@ -360,80 +473,15 @@ def evidence_normalizer_node(state: GraphState) -> GraphState:
             span_id=seg.span_id,
             chunk_index=seg.chunk_index,
             raw_verb=raw_verb,
-        )
-        normalized_segments.append(normalized_seg)
+        ))
 
-    logger.info(f"EvidenceNormalizer: {len(normalized_segments)} segments after normalization")
+    logger.info("EvidenceNormalizer: %d segments after normalization", len(normalized_segments))
 
-    return {**state, "candidate_segments": normalized_segments}
-
-
-# Max segments per chunk for which we call the context-resolver LLM (configurable in langgraph_llm_config).
-# With more segments, the prompt and expected JSON are large; local models (e.g. Ollama)
-# often time out or run very slow, so we skip the LLM and use the fallback (actions from
-# action_item segments only, no cross-chunk linking).
-def _get_context_resolver_max_segments():
-    return CONTEXT_RESOLVER_CONFIG.get("max_segments_for_llm", 8)
-
-
-def context_resolver_node(state: GraphState) -> GraphState:
-    """
-    [5] CONTEXT RESOLVER NODE (CORE INTELLIGENCE)
-    Role: Cross-chunk reasoning
-    Performs:
-    - Reference Completion (attach objects to fragments)
-    - Ownership Linking (connect "needs fixing" with "I'll handle")
-    - Deadline Linking (update deadlines from later context)
-    - Topic Tracking
-    """
-    candidate_segments = state.get("candidate_segments", [])
-    unresolved_references = state.get("unresolved_references", [])
-    active_topics = state.get("active_topics", {})
-    merged_actions = state.get("merged_actions", [])
-    chunk_index = state.get("chunk_index", 0)
-
-    logger.info(f"ContextResolver: Resolving context for {len(candidate_segments)} new segments")
-    logger.info(f"ContextResolver: {len(unresolved_references)} unresolved references, {len(active_topics)} active topics")
-
-    max_segments = _get_context_resolver_max_segments()
-    # Skip LLM when segment count is high: prompt + structured JSON output become large,
-    # and local models often time out or take many minutes (e.g. chunk 2 with 12 segments).
-    if len(candidate_segments) > max_segments:
-        logger.info(
-            "ContextResolver: Skipping LLM (segment count %d > %d); using fallback to avoid timeout.",
-            len(candidate_segments),
-            max_segments,
-        )
-        result = {
-            "resolved_segments": [seg.model_dump() for seg in candidate_segments],
-            "new_actions": [],
-            "updated_actions": [],
-            "still_unresolved": [],
-        }
-    else:
-        result = _context_resolver_llm_call(
-            candidate_segments,
-            unresolved_references,
-            active_topics,
-            merged_actions,
-            chunk_index,
-        )
-
-    # Normalize: Pydantic model has no .get(); convert to dict for uniform access
-    if hasattr(result, "model_dump"):
-        result = result.model_dump()
-    result = dict(result)  # ensure we have a dict
-
-    # Process resolved segments - use all candidate segments for now
-    resolved_segments = candidate_segments.copy()
-
-    # Create new actions from action_item segments
-    for seg in candidate_segments:
+    # Convert action_item segments into Action objects
+    actions: List[Action] = []
+    for seg in normalized_segments:
         if seg.intent == "action_item" and seg.action_details:
-            existing_span_ids = {span for action in merged_actions for span in action.source_spans}
-            if seg.span_id in existing_span_ids:
-                continue
-            action = Action(
+            actions.append(Action(
                 description=seg.action_details.description or seg.text,
                 assignee=seg.action_details.assignee or seg.speaker,
                 deadline=seg.action_details.deadline,
@@ -442,213 +490,206 @@ def context_resolver_node(state: GraphState) -> GraphState:
                 object_text=None,
                 confidence=seg.action_details.confidence or 0.7,
                 source_spans=[seg.span_id],
-                meeting_window=(chunk_index, chunk_index),
-            )
-            merged_actions.append(action)
+                meeting_window=(seg.chunk_index, seg.chunk_index),
+                topic_tags=seg.action_details.topic_tags,
+                unresolved_reference=seg.action_details.unresolved_reference,
+            ))
 
-    # Update existing actions
-    for update_data in result.get("updated_actions", []):
-        if not isinstance(update_data, dict):
+    logger.info("EvidenceNormalizer: Created %d action items from normalized segments", len(actions))
+
+    return {**state, "candidate_segments": normalized_segments, "merged_actions": actions}
+
+
+def _apply_cross_chunk_resolution(
+    actions: List[Action],
+    merge_groups: List[List[int]],
+    updates: List[Dict[str, Any]],
+) -> List[Action]:
+    """
+    Apply merge groups and field updates returned by the cross-chunk resolver LLM.
+    Pure logic — no LLM calls.
+    """
+    actions = [a.model_copy() for a in actions]  # shallow copy to avoid mutating originals
+
+    # Apply field updates first (before merging, so merged representative gets updates)
+    for upd in updates:
+        if not isinstance(upd, dict):
             continue
-        idx = update_data.get("index", -1)
-        if 0 <= idx < len(merged_actions):
-            if "deadline" in update_data:
-                merged_actions[idx].deadline = update_data["deadline"]
-            if "assignee" in update_data:
-                merged_actions[idx].assignee = update_data["assignee"]
-
-    # Track still unresolved
-    still_unresolved = []
-    for unresolved_data in result.get("still_unresolved", []):
-        if not isinstance(unresolved_data, dict):
+        idx = upd.get("index")
+        if not isinstance(idx, int) or idx < 0 or idx >= len(actions):
             continue
-        for seg in candidate_segments:
-            if seg.text == unresolved_data.get("text"):
-                still_unresolved.append(seg)
-                break
+        if "description" in upd and upd["description"]:
+            actions[idx].description = upd["description"]
+        if "assignee" in upd and upd["assignee"]:
+            actions[idx].assignee = upd["assignee"]
+        if "deadline" in upd and upd["deadline"]:
+            actions[idx].deadline = upd["deadline"]
 
-    # Update unresolved references
-    new_unresolved = [ref for ref in unresolved_references if ref not in resolved_segments]
-    new_unresolved.extend(still_unresolved)
+    # Apply merge groups
+    absorbed: set = set()
+    merged: List[Action] = []
 
-    # Update active topics
-    for seg in candidate_segments:
-        if seg.intent in ["decision", "action_item"]:
-            topic_key = seg.text[:50]
-            active_topics[topic_key] = {
-                "speaker": seg.speaker,
-                "chunk": chunk_index,
-                "resolved": seg.intent == "action_item",
-            }
+    for group in merge_groups:
+        valid = [i for i in group if isinstance(i, int) and 0 <= i < len(actions)]
+        if len(valid) < 2:
+            continue
+        for i in valid:
+            absorbed.add(i)
 
-    new_actions_count = len([a for a in merged_actions if a.meeting_window and a.meeting_window[0] == chunk_index])
-    logger.info(f"ContextResolver: Created {new_actions_count} new actions from this chunk")
-    logger.info(f"ContextResolver: {len(new_unresolved)} unresolved references remaining")
+        group_actions = [actions[i] for i in valid]
+        # Representative: the one with the longest (most specific) description
+        representative = max(group_actions, key=lambda a: len(a.description or ""))
+        for other in group_actions:
+            if other is representative:
+                continue
+            if not representative.assignee and other.assignee:
+                representative.assignee = other.assignee
+            if not representative.deadline and other.deadline:
+                representative.deadline = other.deadline
+            representative.source_spans = list(set(representative.source_spans + other.source_spans))
+            representative.confidence = max(representative.confidence, other.confidence)
+            # Merge topic tags
+            existing_tags = set(representative.topic_tags)
+            for tag in other.topic_tags:
+                if tag not in existing_tags:
+                    representative.topic_tags.append(tag)
+                    existing_tags.add(tag)
+            # Expand meeting window to cover both chunks
+            if representative.meeting_window and other.meeting_window:
+                representative.meeting_window = (
+                    min(representative.meeting_window[0], other.meeting_window[0]),
+                    max(representative.meeting_window[1], other.meeting_window[1]),
+                )
+        merged.append(representative)
 
-    return {
-        **state,
-        "candidate_segments": resolved_segments,
-        "unresolved_references": new_unresolved,
-        "active_topics": active_topics,
-        "merged_actions": merged_actions,
-    }
+    # Rebuild final list: non-absorbed actions (in original order) + merged representatives
+    result: List[Action] = []
+    for i, action in enumerate(actions):
+        if i not in absorbed:
+            result.append(action)
+    result.extend(merged)
+
+    # Re-sort chronologically
+    result.sort(key=lambda a: a.meeting_window[0] if a.meeting_window else 999)
+    return result
 
 
-def _context_resolver_llm_call(
-    candidate_segments: list,
-    unresolved_references: list,
-    active_topics: dict,
-    merged_actions: list,
-    chunk_index: int,
-) -> dict:
-    """Call the LLM for context resolution. Returns dict or Pydantic model."""
-    llm = create_context_resolver_llm()
-    
-    # Keep prompt small: local models time out on large context (e.g. chunk 8 with many
-    # accumulated actions). Use last N actions and last N topics only.
-    _max_prev_actions = CONTEXT_RESOLVER_CONFIG.get("max_previous_actions", 5)
-    _max_topics = 3
-    _max_unresolved = 3
+def cross_chunk_resolver_node(state: GraphState) -> GraphState:
+    """
+    [4] CROSS-CHUNK RESOLVER NODE
 
-    context_text = ""
-    if unresolved_references:
-        context_text += "Unresolved references:\n"
-        for ref in unresolved_references[-_max_unresolved:]:
-            context_text += f"- {ref.speaker}: {ref.text}\n"
-    if active_topics:
-        context_text += "\nActive topics:\n"
-        for topic, info in list(active_topics.items())[-_max_topics:]:
-            context_text += f"- {topic}: {info}\n"
+    Runs a single LLM call over all extracted actions to:
+      1. Identify actions that describe the same real-world task using different vocabulary
+         (leveraging topic_tags for vocabulary-independent matching).
+      2. Resolve vague descriptions where unresolved_reference signals a cross-chunk pronoun
+         ("I'll do that" from chunk N referring to a task in chunk N-1).
+      3. Attribute missing deadline/assignee from a later action to an earlier related one.
 
-    new_segments_text = "\n".join([
-        f"{seg.speaker}: {seg.text} [{seg.intent}]"
-        for seg in candidate_segments
-    ])
+    Skipped entirely when there is only one chunk or fewer than 2 actions (nothing to resolve).
+    Falls back gracefully to the unmodified action list if the LLM call fails.
+    """
+    actions = state.get("merged_actions", [])
+    chunks = state.get("chunks", [])
 
-    _actions_to_show = merged_actions[-_max_prev_actions:] if len(merged_actions) > _max_prev_actions else merged_actions
-    _start_idx = len(merged_actions) - len(_actions_to_show)
-    previous_actions_text = "\n".join([
-        f"{_start_idx + i}. {act.description} (assignee: {act.assignee}, deadline: {act.deadline})"
-        for i, act in enumerate(_actions_to_show)
-    ])
-    if len(merged_actions) > _max_prev_actions:
-        previous_actions_text = f"(... {len(merged_actions) - _max_prev_actions} earlier omitted)\n" + previous_actions_text
+    if len(chunks) <= 1 or len(actions) < 2:
+        logger.info("CrossChunkResolver: Skipping (only %d chunk(s), %d action(s))", len(chunks), len(actions))
+        return state
+
+    # Build a compact representation for the prompt
+    action_lines = []
+    for i, act in enumerate(actions):
+        tags_str = ",".join(act.topic_tags) if act.topic_tags else "—"
+        unref_str = f'  unresolved_ref="{act.unresolved_reference}"' if act.unresolved_reference else ""
+        chunk_num = act.meeting_window[0] if act.meeting_window else "?"
+        action_lines.append(
+            f"[{i}] chunk={chunk_num}  speaker={act.speaker}  tags=[{tags_str}]{unref_str}\n"
+            f"    \"{act.description}\""
+        )
+    actions_text = "\n".join(action_lines)
+
+    class CrossChunkResolution(PydanticBaseModel):
+        merge_groups: List[List[int]] = []
+        updates: List[Dict[str, Any]] = []
 
     prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are resolving references and linking actions across meeting chunks.
+        ("system", """You are reviewing action items extracted in parallel from different parts of a meeting transcript.
+Because they were extracted independently, some may be duplicates described in different words,
+or may have vague descriptions that can be clarified using context from nearby actions.
 
 Your tasks:
-1. Complete references: If a segment says "I'll do that", link it to the most recent relevant topic
-2. Link ownership: Connect vague mentions ("needs fixing") with specific commitments ("I'll handle")
-3. Link deadlines: If a later segment mentions a deadline, attach it to earlier related actions
-4. Track topics: Maintain active topic memory
+1. MERGE DUPLICATES: Identify groups of actions that refer to the same real-world task.
+   Use topic_tags as the primary signal — overlapping tags strongly suggest the same task.
+   Also compare descriptions semantically, not just by word overlap.
+   Return each group of duplicate indices in merge_groups (only groups of 2+).
 
-For each new segment, determine:
-- Does it complete a previous unresolved reference? (provide the link)
-- Does it create a new action that should be merged with existing ones?
-- Does it add deadline/assignee info to existing actions?
+2. RESOLVE VAGUE REFERENCES: For any action with unresolved_ref, find the most likely
+   matching action from another chunk and rewrite the description to be fully self-contained.
+   Return as an update: {{index: N, description: "new self-contained description"}}.
+
+3. LINK MISSING FIELDS: If a later action provides a deadline or assignee that clearly
+   belongs to an earlier related action, return an update: {{index: N, deadline: "..."}} or
+   {{index: N, assignee: "..."}}.
+
+Rules:
+- Only merge when you are confident it is the same task. Do NOT merge actions about different things.
+- Do NOT change descriptions unless the current one is genuinely vague or incomplete.
+- Return empty lists if nothing needs to be merged or updated.
 
 Return JSON with:
 {{
-  "resolved_segments": [...],
-  "new_actions": [...],
-  "updated_actions": [...],
-  "still_unresolved": [...]
+  "merge_groups": [[i, j], ...],
+  "updates": [{{"index": N, "description": "...", "deadline": "...", "assignee": "..."}}, ...]
 }}"""),
-        ("human", """Context:
-{context}
-
-New segments from current chunk:
-{new_segments}
-
-Previous actions:
-{previous_actions}"""),
+        ("human", "Action items to review:\n\n{actions}"),
     ])
 
-    from pydantic import BaseModel as PydanticBaseModel, field_validator
-    from typing import List
-
-    class ResolutionResult(PydanticBaseModel):
-        resolved_segments: List[dict] = []
-        new_actions: List[dict] = []
-        updated_actions: List[dict] = []
-        still_unresolved: List[dict] = []
-
-        @field_validator("resolved_segments", "new_actions", "updated_actions", "still_unresolved", mode="before")
-        @classmethod
-        def strings_to_dicts(cls, v: list) -> list:
-            """Accept list of dicts or list of strings; normalize strings to {'text': value}.
-            Empty dicts are dropped since they carry no usable information."""
-            if not isinstance(v, list):
-                return []
-            out = []
-            for item in v:
-                if isinstance(item, str):
-                    out.append({"text": item})
-                elif isinstance(item, dict) and item:  # skip empty {}
-                    out.append(item)
-            return out
-
-    # Use default method (tool calling for Claude/Gemini) — more reliable than
-    # json_mode, which only ensures valid JSON but does not enforce the schema.
-    structured_llm = llm.with_structured_output(ResolutionResult)
+    llm = create_cross_chunk_resolver_llm()
+    structured_llm = llm.with_structured_output(CrossChunkResolution)
     chain = prompt | structured_llm
 
-    timeout_sec = CONTEXT_RESOLVER_CONFIG.get("timeout", 120)
-    approx_prompt_chars = len(context_text) + len(new_segments_text) + len(previous_actions_text or "")
     logger.info(
-        "ContextResolver: Calling LLM (timeout=%ds, prompt ~%d chars, %d previous actions)...",
-        int(timeout_sec),
-        approx_prompt_chars,
-        len(_actions_to_show),
+        "CrossChunkResolver: Reviewing %d actions across %d chunks",
+        len(actions), len(chunks),
     )
 
-    # Log full prompt so it can be copied and tried manually in Ollama if stuck
     try:
-        formatted_messages = prompt.invoke({
-            "context": context_text,
-            "new_segments": new_segments_text,
-            "previous_actions": previous_actions_text or "None",
-        })
-        for i, msg in enumerate(formatted_messages):
-            role = getattr(msg, "type", "message")
-            content = getattr(msg, "content", str(msg))
-            logger.info("[CONTEXT_RESOLVER_PROMPT] --- Part %d (%s) ---\n%s", i + 1, role, content)
-    except Exception as _e:
-        logger.debug("Could not log full prompt: %s", _e)
-
-    try:
-        result = chain.invoke({
-            "context": context_text,
-            "new_segments": new_segments_text,
-            "previous_actions": previous_actions_text or "None",
-        })
+        result = chain.invoke({"actions": actions_text})
+        merge_groups = result.merge_groups or []
+        updates = result.updates or []
+        logger.info(
+            "CrossChunkResolver: %d merge group(s), %d update(s)",
+            len(merge_groups), len(updates),
+        )
     except Exception as e:
-        logger.warning(f"ContextResolver: LLM resolution failed: {e}, using fallback")
-        result = {
-            "resolved_segments": [seg.model_dump() for seg in candidate_segments],
-            "new_actions": [],
-            "updated_actions": [],
-            "still_unresolved": [],
-        }
-    return result
+        logger.warning("CrossChunkResolver: LLM call failed (%s) — passing through unchanged", e)
+        return state
+
+    if not merge_groups and not updates:
+        logger.info("CrossChunkResolver: No changes needed")
+        return state
+
+    resolved = _apply_cross_chunk_resolution(actions, merge_groups, updates)
+    logger.info(
+        "CrossChunkResolver: %d actions → %d after resolution",
+        len(actions), len(resolved),
+    )
+    return {**state, "merged_actions": resolved}
 
 
 def global_deduplicator_node(state: GraphState) -> GraphState:
     """
-    [6] GLOBAL DEDUPLICATOR NODE
-    Role: Stop loops + repetition
-    Two actions are the same if:
+    [4] GLOBAL DEDUPLICATOR NODE
+    Role: Remove duplicate actions across all chunks.
+    Two actions are considered duplicates if:
     - verb similar
-    - description has sufficient word overlap
-    - occur in same meeting window
+    - description has sufficient word overlap (>= 40%)
+    - occur in same meeting window (within 3 chunks)
     Speaker is intentionally NOT required to match: the same task can be raised by
-    one person and acknowledged/noted by another (e.g. John assigns it, Priya confirms).
+    one person and acknowledged/noted by another.
     """
     merged_actions = state.get("merged_actions", [])
-    logger.info(f"GlobalDeduplicator: Processing {len(merged_actions)} actions")
+    logger.info("GlobalDeduplicator: Processing %d actions", len(merged_actions))
 
-    # Stop-words to ignore when computing description overlap
     _STOP_WORDS = {
         "a", "an", "the", "to", "for", "of", "and", "or", "in", "on", "at",
         "it", "that", "this", "is", "be", "with", "as", "by", "from", "up",
@@ -659,8 +700,6 @@ def global_deduplicator_node(state: GraphState) -> GraphState:
         return {w for w in text.lower().split() if w not in _STOP_WORDS}
 
     def are_similar(action1: Action, action2: Action) -> bool:
-        """Check if two actions are duplicates."""
-        # Similar verb (simple string similarity)
         verb1 = (action1.verb or "").lower()
         verb2 = (action2.verb or "").lower()
         if verb1 and verb2 and verb1 != verb2:
@@ -677,44 +716,37 @@ def global_deduplicator_node(state: GraphState) -> GraphState:
             if not similar:
                 return False
 
-        # Similar description — use content words (strip stop-words) for better signal
         words1 = _content_words(action1.description or "")
         words2 = _content_words(action2.description or "")
         if words1 and words2:
             overlap = len(words1 & words2) / max(len(words1), len(words2))
-            if overlap < 0.4:  # raised from 0.3 to reduce false positives now that speaker check is gone
+            if overlap < 0.4:
                 return False
 
-        # Same meeting window (within 3 chunks)
         if action1.meeting_window and action2.meeting_window:
             if abs(action1.meeting_window[0] - action2.meeting_window[0]) > 3:
                 return False
 
         return True
 
-    # Deduplicate
     deduplicated = []
-    seen_indices = set()
+    seen_indices: set = set()
 
     for i, action1 in enumerate(merged_actions):
         if i in seen_indices:
             continue
 
-        # Find all similar actions
         similar_group = [action1]
-        for j, action2 in enumerate(merged_actions[i+1:], start=i+1):
+        for j, action2 in enumerate(merged_actions[i + 1:], start=i + 1):
             if j in seen_indices:
                 continue
             if are_similar(action1, action2):
                 similar_group.append(action2)
                 seen_indices.add(j)
 
-        # Merge the group into one representative action
         if len(similar_group) == 1:
             deduplicated.append(action1)
         else:
-            # Prefer the action whose speaker IS the assignee — that is the person
-            # who will actually do the work, not the one who assigned it.
             def _speaker_is_assignee(a: Action) -> bool:
                 return bool(a.speaker and a.assignee and a.speaker.lower() == a.assignee.lower())
 
@@ -733,31 +765,28 @@ def global_deduplicator_node(state: GraphState) -> GraphState:
                 representative.confidence = max(representative.confidence, other.confidence)
             deduplicated.append(representative)
 
-    logger.info(f"GlobalDeduplicator: Reduced {len(merged_actions)} -> {len(deduplicated)} actions")
-
+    logger.info("GlobalDeduplicator: Reduced %d -> %d actions", len(merged_actions), len(deduplicated))
     return {**state, "merged_actions": deduplicated}
 
 
 def action_finalizer_node(state: GraphState) -> GraphState:
     """
-    [7] ACTION FINALIZER NODE
-    Role: Enforce output schema
+    [5] ACTION FINALIZER NODE
+    Role: Enforce output schema.
     - Fill nulls
     - Normalize verbs
-    - Drop low-confidence hallucination risks
-    - Sort chronologically
+    - Drop low-confidence actions (< 0.3)
+    - Sort chronologically by meeting window
     """
     merged_actions = state.get("merged_actions", [])
-    logger.info(f"ActionFinalizer: Finalizing {len(merged_actions)} actions")
-    
+    logger.info("ActionFinalizer: Finalizing %d actions", len(merged_actions))
+
     finalized = []
-    
+
     for action in merged_actions:
-        # Fill nulls
         if not action.description:
-            continue  # Skip actions without description
-        
-        # Normalize verb
+            continue
+
         verb = action.verb or "do"
         verb_normalizations = {
             "take care of": "fix",
@@ -772,29 +801,23 @@ def action_finalizer_node(state: GraphState) -> GraphState:
             if pattern.lower() in verb.lower():
                 verb = normalized
                 break
-        
-        # Drop low-confidence actions (< 0.3)
+
         if action.confidence and action.confidence < 0.3:
-            logger.debug(f"ActionFinalizer: Dropping low-confidence action: {action.description}")
+            logger.debug("ActionFinalizer: Dropping low-confidence action: %s", action.description)
             continue
-        
-        # Ensure assignee defaults to speaker if missing
-        assignee = action.assignee or action.speaker
-        
-        finalized_action = Action(
+
+        finalized.append(Action(
             description=action.description,
-            assignee=assignee,
+            assignee=action.assignee or action.speaker,
             deadline=action.deadline,
             speaker=action.speaker,
             verb=verb,
             object_text=action.object_text,
             confidence=action.confidence or 0.5,
-            source_spans=list(set(action.source_spans)),  # Deduplicate spans
+            source_spans=list(set(action.source_spans)),
             meeting_window=action.meeting_window,
-        )
-        finalized.append(finalized_action)
-    
-    # Sort chronologically by meeting window
+        ))
+
     finalized.sort(key=lambda a: a.meeting_window[0] if a.meeting_window else 999)
 
     logger.info("ActionFinalizer: Finalized %d actions (source_spans, meeting_window)", len(finalized))
@@ -808,26 +831,3 @@ def action_finalizer_node(state: GraphState) -> GraphState:
         )
 
     return {**state, "merged_actions": finalized}
-
-
-def should_continue(state: GraphState) -> str:
-    """Determine if we should continue processing chunks."""
-    chunks = state.get("chunks", [])
-    chunk_index = state.get("chunk_index", 0)
-    relevance_result = state.get("relevance_result", "")
-    
-    if relevance_result == "DONE":
-        return "end"
-    
-    if relevance_result == "YES":
-        return "extract"
-    else:
-        return "next_chunk"
-
-
-def increment_chunk(state: GraphState) -> GraphState:
-    """Move to next chunk."""
-    chunk_index = state.get("chunk_index", 0)
-    new_index = chunk_index + 1
-    logger.info(f"IncrementChunk: Moving to chunk {new_index + 1}")
-    return {**state, "chunk_index": new_index}

@@ -10,6 +10,14 @@ class ActionDetails(BaseModel):
     assignee: str | None = Field(default=None, description="Who is assigned to do the action")
     deadline: str | None = Field(default=None, description="Deadline or timeline mentioned")
     confidence: float | None = Field(default=None, description="Confidence score (0.0-1.0)")
+    topic_tags: list[str] = Field(
+        default_factory=list,
+        description="2-4 short subject keywords independent of verb/phrasing, e.g. ['client', 'email', 'scope']",
+    )
+    unresolved_reference: str | None = Field(
+        default=None,
+        description="When context_unclear=True, a short phrase describing what is being referenced, e.g. 'the migration task'",
+    )
 
 
 class Segment(BaseModel):
@@ -67,4 +75,12 @@ class Action(BaseModel):
     meeting_window: tuple[int, int] | None = Field(
         default=None,
         description="(start_chunk, end_chunk) where this action was mentioned"
+    )
+    topic_tags: list[str] = Field(
+        default_factory=list,
+        description="Subject keywords for cross-chunk semantic matching, e.g. ['client', 'email', 'scope']",
+    )
+    unresolved_reference: str | None = Field(
+        default=None,
+        description="Short phrase describing an unresolved cross-chunk reference, e.g. 'the migration task'",
     )
