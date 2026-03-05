@@ -13,7 +13,7 @@ Per-node provider overrides:
   This allows mixing providers within a single run (e.g. gemini_mixed).
 
 To add a new provider, create configs/<provider>.env with PROVIDER=<name>
-and add the corresponding LLM factory branch in langgraph_nodes.py.
+and add the corresponding LLM factory branch in nodes.py.
 """
 import os
 from dotenv import load_dotenv, dotenv_values
@@ -22,7 +22,7 @@ from dotenv import load_dotenv, dotenv_values
 # LOAD ROOT .env TO READ ACTIVE_PROVIDER
 # ============================================================================
 
-_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv(os.path.join(_project_root, ".env"), override=False)
 
 ACTIVE_PROVIDER = os.getenv("ACTIVE_PROVIDER", "ollama").strip().lower()

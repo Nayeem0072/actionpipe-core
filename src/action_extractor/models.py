@@ -18,6 +18,17 @@ class ActionDetails(BaseModel):
         default=None,
         description="When context_unclear=True, a short phrase describing what is being referenced, e.g. 'the migration task'",
     )
+    action_category: Literal["communication", "task", "event", "documentation", "other"] | None = Field(
+        default=None,
+        description=(
+            "Category hint for tool classification. "
+            "'communication': involves emailing, notifying, or messaging someone; "
+            "'task': fixing, investigating, reviewing, implementing, or tracking a work item; "
+            "'event': scheduling a meeting, session, or calendar event; "
+            "'documentation': writing, documenting, or creating reference material; "
+            "'other': none of the above."
+        ),
+    )
 
 
 class Segment(BaseModel):
@@ -83,4 +94,8 @@ class Action(BaseModel):
     unresolved_reference: str | None = Field(
         default=None,
         description="Short phrase describing an unresolved cross-chunk reference, e.g. 'the migration task'",
+    )
+    action_category: Literal["communication", "task", "event", "documentation", "other"] | None = Field(
+        default=None,
+        description="Category hint for tool classification, propagated from ActionDetails.",
     )

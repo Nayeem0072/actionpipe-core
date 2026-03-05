@@ -19,11 +19,11 @@ load_dotenv(os.path.join(_project_root, ".env"))
 from langchain_core.messages import SystemMessage, HumanMessage
 from pydantic import BaseModel as PydanticBaseModel, field_validator
 
-from src.langgraph_nodes import create_context_resolver_llm
-from src.langgraph_llm_config import CONTEXT_RESOLVER_CONFIG
+from src.action_extractor.nodes import create_context_resolver_llm
+from src.action_extractor.llm_config import CONTEXT_RESOLVER_CONFIG
 
 
-# Same structure as in langgraph_nodes._context_resolver_llm_call
+# Same structure as in action_extractor/nodes._context_resolver_llm_call
 class ResolutionResult(PydanticBaseModel):
     resolved_segments: list[dict]
     new_actions: list[dict]

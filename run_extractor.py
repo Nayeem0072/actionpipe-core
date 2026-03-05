@@ -8,7 +8,7 @@ project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
 # Import and run main
-from src.langgraph_main import main
+from src.action_extractor.main import main
 
 if __name__ == "__main__":
     main()

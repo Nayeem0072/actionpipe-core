@@ -1,6 +1,6 @@
 """Graph state definition for LangGraph action item extraction."""
 from typing import TypedDict, List, Dict, Any, Set
-from .langgraph_models import Segment, Action
+from .models import Segment, Action
 
 
 class GraphState(TypedDict, total=False):

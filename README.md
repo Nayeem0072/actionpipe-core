@@ -1,10 +1,12 @@
-# LangGraph Meeting Action Item Extractor
+# LangGraph Meeting Action Item Extractor + Normalizer
 
-Extracts structured action items from raw meeting transcripts using a parallel LangGraph pipeline. Supports multiple LLM providers — run fully locally via Ollama, or use Gemini or Claude APIs for higher accuracy.
+Extracts structured action items from raw meeting transcripts using a parallel LangGraph pipeline, then normalizes each action into a ready-to-execute tool call — email, Jira ticket, calendar event, or Notion document. Supports multiple LLM providers — run fully locally via Ollama, or use Gemini or Claude APIs for higher accuracy.
 
 ---
 
 ## Features
+
+### Extractor
 
 - Splits transcripts into 20-turn chunks that preserve conversational context
 - Filters irrelevant chunks (greetings, small talk, audio glitches) with a free keyword scorer — no LLM cost
@@ -13,6 +15,17 @@ Extracts structured action items from raw meeting transcripts using a parallel L
 - **Semantically merges cross-chunk duplicates** and resolves vague references that span chunk boundaries (`"I'll handle that"` ↔ the task it refers to from a prior chunk)
 - Cleans ASR noise (filler words, repeated phrases) and normalizes verbs
 - Deduplicates actions across all chunks and produces a chronologically sorted final list
+- Tags each action with an `action_category` hint (`communication`, `task`, `event`, `documentation`) used downstream by the normalizer
+
+### Normalizer
+
+- **Deadline normalization** — converts free-text deadlines to ISO 8601 dates: `"after the meeting"` → `2026-03-05`, `"March 10"` → `2026-03-10`, `"later"` → `null`
+- **Verb upgrading** — replaces weak or colloquial verbs with precise, tool-ready ones: `"talk to"` → `notify`, `"circle back"` → `follow_up`, `"look into"` → `investigate`
+- **Compound action splitting** — breaks multi-verb descriptions into atomic actions: `"Investigate flaky tests and fix them"` → two separate Jira tasks
+- **Deduplication** — removes semantically equivalent actions using Jaccard similarity, same assignee, and same verb
+- **Tool classification** — maps each action to the right tool: `send_email`, `create_jira_task`, `set_calendar`, `create_notion_doc`, `send_notification`, or `general_task`
+- **Tool parameter extraction** — pulls structured, tool-ready parameters from the description (recipient, subject, priority, event time, etc.) using regex — no extra LLM calls
+- **Hybrid approach** — rule-based dictionaries and regex patterns handle ~90% of cases; LLM is only called for genuinely ambiguous splits or unclassifiable actions
 
 ---
 
@@ -29,8 +42,11 @@ pip install -r requirements.txt
 # 3. Configure your provider
 cp .env.example .env       # then edit .env (see Configuration below)
 
-# 4. Run
-python run_langgraph.py input.txt
+# 4. Extract action items from a transcript
+python run_extractor.py input/input.txt      # → output/output.json
+
+# 5. Normalize into tool-ready actions
+python run_normalizer.py                     # → output/normalized_output.json
 ```
 
 ---
@@ -54,6 +70,7 @@ Dependencies:
 | `langgraph` | Graph workflow engine |
 | `pydantic` | Data models and structured output |
 | `python-dotenv` | `.env` file loading |
+| `python-dateutil` | Deadline parsing (`"March 10"` → `2026-03-10`) |
 
 ---
 
@@ -148,34 +165,36 @@ LANGGRAPH_API_KEY=ollama   # any non-empty string; Ollama ignores it
 
 ## Usage
 
-**Default files** (`input.txt` → `output.json`):
+### Extractor
+
+**Default files** (`input/input.txt` → `output/output.json`):
 
 ```bash
-python run_langgraph.py
+python run_extractor.py
 ```
 
-**Custom input** (output still goes to `output.json`):
+**Custom input** (output still goes to `output/output.json`):
 
 ```bash
-python run_langgraph.py my_transcript.txt
+python run_extractor.py my_transcript.txt
 ```
 
 **Custom input and output:**
 
 ```bash
-python run_langgraph.py my_transcript.txt my_output.json
+python run_extractor.py my_transcript.txt my_output.json
 ```
 
 **As a Python module:**
 
 ```bash
-python -m src.langgraph_main my_transcript.txt my_output.json
+python -m src.action_extractor.main my_transcript.txt my_output.json
 ```
 
 **As a library:**
 
 ```python
-from src.langgraph_workflow import extract_actions
+from src.action_extractor.workflow import extract_actions
 
 actions = extract_actions(transcript_raw="<your transcript text>")
 # returns a list of dicts, one per action item
@@ -196,134 +215,78 @@ JSON input is also supported if the file contains a `transcript_raw` field.
 
 ---
 
-## Pipeline
+### Normalizer
 
-The pipeline is a **linear** LangGraph graph with no loops. After the segmenter chunks the transcript, all relevant chunks are extracted **concurrently** in the parallel extractor node. A single follow-up LLM call then resolves any cross-chunk semantic issues before the final deduplication and sorting passes.
+The normalizer reads an extractor output file (JSON array) and writes a `output/normalized_output.json` with each action mapped to a specific tool.
 
-```
-┌─────────────────────┐
-│      Segmenter      │  Splits transcript into 20-turn chunks       (no LLM)
-└──────────┬──────────┘
-           │
-┌──────────▼──────────┐
-│  Parallel Extractor │  Keyword filter → concurrent LLM extraction  (LLM × N chunks)
-│                     │
-│  chunk 1 ──► LLM ─┐ │
-│  chunk 2 ──► LLM ─┤ │  All chunks run at the same time.
-│  chunk 3 ──► LLM ─┤ │  Wall time = max(chunk latency), not sum.
-│  chunk N ──► LLM ─┘ │
-└──────────┬──────────┘
-           │
-┌──────────▼──────────┐
-│ Evidence Normalizer │  ASR cleanup, dedup, action object creation  (no LLM)
-└──────────┬──────────┘
-           │
-┌──────────▼──────────┐
-│Cross-chunk Resolver │  Semantic merge + cross-chunk pronoun resolve (1 LLM call)
-└──────────┬──────────┘
-           │
-┌──────────▼──────────┐
-│ Global Deduplicator │  Text-similarity duplicate removal            (no LLM)
-└──────────┬──────────┘
-           │
-┌──────────▼──────────┐
-│   Action Finalizer  │  Schema enforcement, confidence filter, sort  (no LLM)
-└──────────┬──────────┘
-           │
-          END
+**Default** (`output/output.json` → `output/normalized_output.json`):
+
+```bash
+python run_normalizer.py
 ```
 
----
+**Custom input and output:**
 
-## Node Details
+```bash
+python run_normalizer.py output/output.json result.json
+```
 
-### 1. Segmenter *(no LLM)*
+**With an explicit meeting date** (used for relative deadline resolution — defaults to today):
 
-Parses the transcript into `Speaker: text` turns using a regex, then groups them into chunks of **20 turns** each. Larger chunks mean fewer LLM calls and keep most intra-conversation references (pronouns, topic callbacks) within a single chunk where the extractor can resolve them.
+```bash
+python run_normalizer.py output/output.json result.json --meeting-date 2026-03-05
+```
 
-**Output:** list of text chunks, each containing up to 20 speaker turns.
+**As a library:**
 
----
+```python
+from src.action_normalizer.workflow import normalize_actions
 
-### 2. Parallel Extractor *(LLM — concurrent)*
+# raw_actions is the list returned by extract_actions() or loaded from output/output.json
+normalized = normalize_actions(raw_actions, meeting_date="2026-03-05")
+# returns a list of NormalizedAction dicts
+```
 
-This node does two things in sequence:
+**End-to-end pipeline in Python:**
 
-**Step 1 — Keyword relevance filter (free):** Each chunk is scored by counting how many action-signal keywords it contains (`"will"`, `"should"`, `"need to"`, `"can you"`, `"deadline"`, `"i'll"`, `"schedule"`, etc.). A score of 0 means the chunk is purely conversational (greetings, small talk) and is skipped. This costs nothing and avoids burning LLM calls on filler content.
+```python
+from src.langgraph_workflow import extract_actions
+from src.action_normalizer_workflow import normalize_actions
 
-**Step 2 — Concurrent extraction:** All chunks that passed the filter are submitted to a `ThreadPoolExecutor` (capped at 6 concurrent workers). Each thread calls the LLM independently with the same structured extraction prompt, which instructs the model to:
+actions = extract_actions(transcript_raw=open("meeting.txt").read())
+normalized = normalize_actions(actions, meeting_date="2026-03-05")
+```
 
-- Extract every utterance with its speaker, intent, and resolved context
-- Produce fully self-contained `action_item` descriptions (expand pronouns using surrounding turns within the chunk)
-- Tag each action with 2–4 short subject keywords (`topic_tags`) for vocabulary-independent semantic matching
-- Record what an unresolved cross-chunk reference appears to point to (`unresolved_reference`), when the context cannot be resolved within the current chunk alone
-- Assign a confidence score to each action
+The normalizer prints a summary table to stdout on completion:
 
-Because threads run in parallel, total wall time is the latency of the **slowest** single chunk, not the sum of all chunks.
-
-**Output:** combined, chunk-ordered list of `Segment` objects from all relevant chunks.
-
----
-
-### 3. Evidence Normalizer *(no LLM)*
-
-Cleans all segments and converts `action_item` segments into `Action` objects:
-
-- **ASR noise removal** — strips filler words (`um`, `uh`, `er`, `ah`, `like`, `you know`)
-- **Whitespace normalisation** — collapses multiple spaces
-- **Cross-chunk deduplication** — drops exact-text-match duplicates from any chunk
-- **Meta-action filtering** — drops utterances that acknowledge note-taking rather than committing to work (e.g. `"noted"`, `"writing that down"`, `"adding to list"`)
-- **Verb normalisation** — maps informal phrases to canonical verbs (`"take care of"` → `"fix"`, `"gonna"` → `"will"`)
-- **Action creation** — converts each surviving `action_item` segment into a typed `Action` object with `meeting_window`, `source_spans`, and confidence
-
----
-
-### 4. Cross-chunk Resolver *(1 LLM call)*
-
-Addresses two failure modes that chunk-isolated extraction cannot handle:
-
-1. **Same task, different vocabulary** — `"handle the API gateway migration"` (chunk 1) and `"prepare migration plan with rollback"` (chunk 2) share few words but describe the same task. The text-similarity deduplicator would miss this; the resolver catches it using `topic_tags`.
-2. **Cross-chunk pronoun resolution** — `"I'll do that"` in chunk N where `"that"` was introduced in chunk N-1.
-
-The node formats all extracted actions into a compact prompt listing each action's index, chunk number, speaker, `topic_tags`, optional `unresolved_reference`, and description. A single LLM call returns:
-
-- **`merge_groups`** — groups of action indices that represent the same real-world task (e.g. `[[0, 2]]`). For each group, the most specific (longest) description is kept as the representative; `assignee`, `deadline`, `topic_tags`, and `source_spans` are merged from all members.
-- **`updates`** — field patches for individual actions: a rewritten self-contained description for vague references, or a missing `deadline`/`assignee` linked from a related action in another chunk.
-
-**Skip condition:** automatically skipped when there is only 1 chunk or fewer than 2 actions — nothing to resolve.
-
-**Fallback:** if the LLM call fails or returns an invalid structure, the action list passes through unchanged (same output as if the node did not exist).
+```
+──────────────────────────────────────────────────────────────────────────────────────────
+#    TOOL                    VERB            DEADLINE      ASSIGNEE    DESCRIPTION
+──────────────────────────────────────────────────────────────────────────────────────────
+1    create_jira_task        investigate     —             John        Investigate flaky tests (split)
+2    create_jira_task        resolve         —             John        Resolve flaky tests issue (split)
+3    send_email              draft           2026-03-05    John        Draft update email to client...
+4    set_calendar            schedule        2026-03-10    John        Schedule bug bash session...
+5    send_notification       notify          —             John        Talk to finance about debug...
+──────────────────────────────────────────────────────────────────────────────────────────
+```
 
 ---
 
-### 5. Global Deduplicator *(no LLM)*
+## Pipelines, node details, and performance
 
-Merges actions that refer to the same real-world task across all chunks. Two actions are considered duplicates when all of the following are true:
+Detailed pipeline diagrams, node-by-node descriptions, and performance notes are in separate docs:
 
-- **Similar verb** — exact match or within a synonym group (`fix`/`handle`/`deal with`, `send`/`email`, `review`/`check`)
-- **High description overlap** — ≥ 40% word overlap after removing stop words
-- **Close meeting window** — within 3 chunks of each other
-
-When merging a group, the representative is the action whose speaker is also the assignee (the person actually doing the work). Missing deadline or assignee fields are filled from other members of the group.
-
----
-
-### 6. Action Finalizer *(no LLM)*
-
-Enforces the output schema and drops low-quality results:
-
-- Skips actions without a description
-- Drops actions with confidence below 0.3 (likely hallucinations or noise)
-- Defaults `assignee` to `speaker` if no assignee was extracted
-- Normalises verbs to canonical forms
-- Deduplicates `source_spans` within each action
-- Sorts the final list chronologically by `meeting_window[0]`
+- **[Action Extractor](docs/action_extractor.md)** — pipeline, extractor nodes (Segmenter → Action Finalizer), optimization impact, scaling
+- **[Action Normalizer](docs/action_normalizer.md)** — pipeline, normalizer nodes (Deadline Normalizer → Tool Classifier), performance notes
 
 ---
 
 ## Output
 
-Written to `output.json` (or the path you specify). A JSON array, one object per action item.
+### Extractor output
+
+Written to `output/output.json` (or the path you specify). A JSON array, one object per action item.
 
 | Field | Type | Description |
 |---|---|---|
@@ -336,7 +299,8 @@ Written to `output.json` (or the path you specify). A JSON array, one object per
 | `source_spans` | `string[]` | Segment IDs the action was derived from |
 | `meeting_window` | `[int, int]` | Chunk range `[start, end]` where the action was discussed |
 | `topic_tags` | `string[]` | Subject keywords used for cross-chunk semantic matching (e.g. `["client", "email", "scope"]`) |
-| `unresolved_reference` | `string \| null` | Short phrase describing a cross-chunk reference that could not be resolved during extraction; `null` when the description is fully self-contained |
+| `unresolved_reference` | `string \| null` | Short phrase describing a cross-chunk reference that could not be resolved during extraction; `null` when fully self-contained |
+| `action_category` | `string \| null` | Category hint for the normalizer: `communication`, `task`, `event`, `documentation`, or `other` |
 
 Example:
 
@@ -347,12 +311,13 @@ Example:
     "assignee": "John",
     "deadline": "after this meeting",
     "speaker": "John",
-    "verb": "send",
+    "verb": "draft",
     "confidence": 0.9,
     "source_spans": ["a3f1c2d4e5b6"],
     "meeting_window": [1, 1],
     "topic_tags": ["client", "email", "scope"],
-    "unresolved_reference": null
+    "unresolved_reference": null,
+    "action_category": "communication"
   },
   {
     "description": "Schedule bug bash session before release",
@@ -364,38 +329,113 @@ Example:
     "source_spans": ["f7e2b1c9a032", "c1a4d7e82b91"],
     "meeting_window": [1, 2],
     "topic_tags": ["bug-bash", "testing", "release"],
-    "unresolved_reference": null
+    "unresolved_reference": null,
+    "action_category": "event"
   }
 ]
 ```
 
-An execution log is written to `output_log.txt` with per-node timing, segment counts, and the final action list.
+An execution log is written to `output/output_log.txt` with per-node timing, segment counts, and the final action list.
 
 ---
 
-## Performance
+### Normalizer output
 
-### Optimization impact (`input_very_small.txt`, 63 turns, `ACTIVE_PROVIDER=gemini_mixed`)
+Written to `output/normalized_output.json` (or the path you specify). A JSON array of `NormalizedAction` objects.
 
-| Stage | Before (sequential) | After (parallel + resolver) |
+| Field | Type | Description |
 |---|---|---|
-| Chunks | 8 | 4 |
-| LLM calls | 22 (sequential) | 4 concurrent + 1 resolver |
-| Parallel extraction | ~80 s | ~18 s |
-| Cross-chunk resolution | — | ~5 s |
-| Total runtime | ~92 s | ~23 s |
-| Actions extracted | 5 | 5+ (cross-chunk merges applied) |
+| `id` | `string` | Short unique ID for this action (8-char hex) |
+| `description` | `string` | Clean, atomic description (may differ from extractor if split or rewritten) |
+| `assignee` | `string \| null` | Who is responsible |
+| `raw_deadline` | `string \| null` | Original deadline string from the extractor |
+| `normalized_deadline` | `string \| null` | ISO 8601 date (`YYYY-MM-DD`) or `null` |
+| `speaker` | `string` | Who mentioned this action in the meeting |
+| `verb` | `string` | Upgraded, tool-ready verb (`"notify"`, `"investigate"`, `"schedule"`) |
+| `confidence` | `float` | Confidence score 0.0–1.0 |
+| `tool_type` | `string` | One of: `send_email`, `create_jira_task`, `set_calendar`, `create_notion_doc`, `send_notification`, `general_task` |
+| `tool_params` | `object` | Tool-specific parameters extracted from the description |
+| `source_spans` | `string[]` | Span IDs from the original transcript |
+| `parent_id` | `string \| null` | ID of the compound action this was split from; `null` if not a split |
+| `meeting_window` | `[int, int]` | Chunk range from the extractor |
+| `action_category` | `string \| null` | Category hint propagated from the extractor |
+| `topic_tags` | `string[]` | Subject keywords propagated from the extractor |
 
-### Scaling across transcript sizes (`ACTIVE_PROVIDER=gemini_mixed`)
+Example (two actions from a single compound split, plus a classification example):
 
-| Transcript | Turns | Chunks | LLM calls | Extraction | Resolution | **Total** | Actions |
-|---|---|---|---|---|---|---|---|
-| `input_very_small.txt` | 63 | 4 | 4 + 1 | ~18 s | ~5 s | **~23 s** | 5 |
-| `input_small.txt` | 99 | 5 | 5 + 1 | ~20 s | ~10 s | **~30 s** | 9 |
-| `input.txt` | 130 | 7 (1 skipped) | 6 + 1 | ~21 s | ~5 s | **~27 s** | 9 |
-| `input_large.txt` | 300 | 15 | 15 + 1 | ~49 s | ~19 s | **~68 s** | 33 |
+```json
+[
+  {
+    "id": "85efe08c",
+    "description": "Investigate flaky tests",
+    "assignee": "John",
+    "raw_deadline": "later",
+    "normalized_deadline": null,
+    "speaker": "John",
+    "verb": "investigate",
+    "confidence": 0.85,
+    "tool_type": "create_jira_task",
+    "tool_params": {
+      "title": "Investigate flaky tests",
+      "assignee": "John",
+      "priority": "medium",
+      "due_date": null,
+      "labels": ["tests", "flaky"]
+    },
+    "source_spans": ["cbefa1ccbd15"],
+    "parent_id": "d5e590d8",
+    "meeting_window": [2, 2],
+    "action_category": "task",
+    "topic_tags": ["tests", "flaky"]
+  },
+  {
+    "id": "2ff4df27",
+    "description": "Resolve flaky tests issue",
+    "assignee": "John",
+    "raw_deadline": "later",
+    "normalized_deadline": null,
+    "speaker": "John",
+    "verb": "resolve",
+    "confidence": 0.85,
+    "tool_type": "create_jira_task",
+    "tool_params": {
+      "title": "Resolve flaky tests issue",
+      "assignee": "John",
+      "priority": "medium",
+      "due_date": null,
+      "labels": ["tests", "flaky"]
+    },
+    "source_spans": ["cbefa1ccbd15"],
+    "parent_id": "d5e590d8",
+    "meeting_window": [2, 2],
+    "action_category": "task",
+    "topic_tags": ["tests", "flaky"]
+  },
+  {
+    "id": "812f7cd3",
+    "description": "Draft update email to client to reset expectations",
+    "assignee": "John",
+    "raw_deadline": "after the meeting",
+    "normalized_deadline": "2026-03-05",
+    "speaker": "John",
+    "verb": "draft",
+    "confidence": 0.85,
+    "tool_type": "send_email",
+    "tool_params": {
+      "to": "client",
+      "subject_hint": "Draft update email to client to reset expectations",
+      "body_hint": "Draft update email to client to reset expectations"
+    },
+    "source_spans": ["f5ddcca3181f"],
+    "parent_id": null,
+    "meeting_window": [3, 3],
+    "action_category": "communication",
+    "topic_tags": ["client", "email", "scope"]
+  }
+]
+```
 
-The key observation is that total runtime scales only weakly with transcript length for the extraction phase — all chunks run in parallel so wall time is bounded by the **slowest single chunk**, not the sum. Going from 63 turns to 300 turns (nearly 5× more content) adds ~31 s in extraction. The cross-chunk resolver scales with the number of extracted actions; with 33 actions across 15 chunks, resolution grows to ~19 s compared to ~5–10 s for smaller transcripts.
+An execution log is written to `output/normalizer_log.txt`.
 
 ---
 
@@ -405,27 +445,48 @@ The key observation is that total runtime scales only weakly with transcript len
 agent-ai/
 ├── src/
 │   ├── __init__.py
-│   ├── langgraph_main.py        # Entry point: CLI args, logging, file I/O
-│   ├── langgraph_workflow.py    # Graph definition and extract_actions()
-│   ├── langgraph_nodes.py       # All node implementations
-│   ├── langgraph_state.py       # Graph state schema (TypedDict)
-│   ├── langgraph_models.py      # Pydantic models: Segment, Action, ActionDetails
-│   └── langgraph_llm_config.py  # Per-node LLM config (loaded from .env + configs/)
+│   │
+│   ├── action_extractor/              # ── Extractor ──────────────────────
+│   │   ├── __init__.py
+│   │   ├── main.py                    # CLI entry point
+│   │   ├── workflow.py                # Extractor graph + extract_actions()
+│   │   ├── nodes.py                   # All extractor node implementations
+│   │   ├── state.py                   # Extractor graph state (TypedDict)
+│   │   ├── models.py                  # Pydantic models: Segment, Action, ActionDetails
+│   │   └── llm_config.py              # Per-node LLM config (loaded from .env + configs/)
+│   │
+│   └── action_normalizer/             # ── Normalizer ──────────────────────
+│       ├── __init__.py
+│       ├── workflow.py                # Normalizer graph + normalize_actions()
+│       ├── nodes.py                   # All normalizer node implementations
+│       ├── state.py                   # Normalizer graph state (TypedDict)
+│       ├── models.py                  # Pydantic models: NormalizedAction, ToolType
+│       └── data.py                    # Rule-based data: verb dict, tool map, patterns
+│
+├── input/
+│   ├── input.txt                      # Default input transcript
+│   ├── input_very_small.txt           # Small test transcript (63 turns)
+│   ├── input_small.txt                # Medium test transcript
+│   ├── input_large.txt                # Large test transcript
+│   └── real_input.txt                 # Real meeting transcript
+├── output/                            # Generated on run (gitignored)
+│   ├── output.json                    # Extractor output
+│   ├── normalized_output.json         # Normalizer output
+│   ├── output_log.txt                 # Extractor execution log
+│   └── normalizer_log.txt             # Normalizer execution log
 ├── configs/
-│   ├── gemini_mixed.env         # Gemini Flash provider config
-│   ├── claude.env               # Claude Haiku provider config
-│   └── ollama_glm.env           # Ollama local provider config
+│   ├── gemini_mixed.env               # Gemini Flash provider config
+│   ├── claude.env                     # Claude Haiku provider config
+│   └── ollama_glm.env                 # Ollama local provider config
 ├── tests/
 │   ├── test_langchain_to_llm.py
 │   └── test_langchain_to_llm_standalone.py
 ├── docs/
-├── run_langgraph.py             # Convenience runner (wraps src.langgraph_main)
-├── input.txt                    # Default input transcript
-├── input_very_small.txt         # Small test transcript (63 turns)
-├── input_small.txt              # Medium test transcript
-├── output.json                  # Default output (generated on run)
-├── output_log.txt               # Execution log (generated on run)
-├── .env                         # API keys and ACTIVE_PROVIDER (gitignored)
+│   ├── action_extractor.md            # Extractor pipeline, nodes, performance
+│   └── action_normalizer.md           # Normalizer pipeline, nodes, performance
+├── run_extractor.py                   # Extractor runner (wraps src.action_extractor.main)
+├── run_normalizer.py                  # Normalizer runner with summary table
+├── .env                               # API keys and ACTIVE_PROVIDER (gitignored)
 └── requirements.txt
 ```
 

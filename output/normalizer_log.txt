@@ -1,0 +1,24 @@
+01:23:50 [INFO] No --meeting-date supplied; defaulting to today (2026-03-06)
+01:23:50 [INFO] Loaded 9 action(s) from output/output.json (meeting_date=2026-03-06)
+01:23:50 [INFO] NormalizerWorkflow: Normalising 9 action(s)...
+01:23:50 [INFO] Action Normalizer workflow created
+01:23:50 [INFO] [TIMING] NormalizerNode deadline_normalizer: started
+01:23:50 [INFO] DeadlineNormalizer: 9 actions initialised, deadlines normalised
+01:23:50 [INFO] [34m[TIMING] NormalizerNode deadline_normalizer: completed in 0.00s[0m
+01:23:50 [INFO] [TIMING] NormalizerNode verb_enricher: started
+01:23:50 [INFO] VerbEnricher: 9 actions verb-enriched
+01:23:50 [INFO] [34m[TIMING] NormalizerNode verb_enricher: completed in 0.00s[0m
+01:23:50 [INFO] [TIMING] NormalizerNode action_splitter: started
+01:23:50 [INFO] ActionSplitter: Compound candidate: 'Draft an update email to the client to reset expectations, including t'
+01:23:50 [INFO] AFC is enabled with max remote calls: 10.
+01:23:53 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+01:23:53 [INFO] ActionSplitter: 9 → 9 actions after splitting
+01:23:53 [INFO] [34m[TIMING] NormalizerNode action_splitter: completed in 3.58s[0m
+01:23:53 [INFO] [TIMING] NormalizerNode deduplicator: started
+01:23:53 [INFO] Deduplicator: 9 → 9 actions after deduplication
+01:23:53 [INFO] [34m[TIMING] NormalizerNode deduplicator: completed in 0.00s[0m
+01:23:53 [INFO] [TIMING] NormalizerNode tool_classifier: started
+01:23:53 [INFO] ToolClassifier: 9 actions classified and parameterised
+01:23:53 [INFO] [34m[TIMING] NormalizerNode tool_classifier: completed in 0.00s[0m
+01:23:53 [INFO] NormalizerWorkflow: Done — 9 normalised action(s)
+01:23:53 [INFO] Done. 9 normalised action(s) written to output/normalized_output.json

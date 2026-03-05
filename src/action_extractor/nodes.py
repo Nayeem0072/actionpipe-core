@@ -7,11 +7,26 @@ from typing import Dict, Any, List
 from pydantic import BaseModel as PydanticBaseModel
 from langchain_core.prompts import ChatPromptTemplate
 
-from .langgraph_state import GraphState
-from .langgraph_models import Segment, Action, ActionDetails
-from .langgraph_llm_config import LOCAL_EXTRACTOR_CONFIG, CROSS_CHUNK_RESOLVER_CONFIG
+from .state import GraphState
+from .models import Segment, Action, ActionDetails
+from .llm_config import LOCAL_EXTRACTOR_CONFIG, CROSS_CHUNK_RESOLVER_CONFIG
 
 logger = logging.getLogger(__name__)
+
+# Regex to extract the primary action verb from a description string.
+# Multi-word phrases are listed before single words to ensure the longest match wins.
+_LEADING_VERB_RE = re.compile(
+    r"^(circle\s+back|follow\s+up|follow\s+through|talk\s+to|speak\s+with|"
+    r"reach\s+out|check\s+in|check\s+on|look\s+into|set\s+up|clean\s+up|"
+    r"write\s+up|take\s+care\s+of|deal\s+with|go\s+over|"
+    r"draft|send|email|schedule|book|create|fix|investigate|review|check|add|"
+    r"notify|inform|tell|document|write|track|update|test|resolve|implement|"
+    r"deploy|monitor|configure|refactor|migrate|analyze|discuss|prepare|submit|"
+    r"approve|assign|complete|build|research|audit|remove|delete|verify|confirm|"
+    r"coordinate|ensure|present|push|pull|run|execute|close|open|start|stop|"
+    r"enable|disable|escalate|triage|unblock|validate|reproduce)\b",
+    re.IGNORECASE,
+)
 
 # Cap concurrent LLM API calls to avoid rate-limiting on high-chunk-count transcripts.
 # Raise this if your API tier supports higher concurrency.
@@ -88,7 +103,7 @@ def create_llm(cfg: dict):
     else:
         raise ValueError(
             f"Unsupported provider '{provider}'. "
-            "Add a branch in create_llm() in langgraph_nodes.py to support it."
+            "Add a branch in create_llm() in nodes.py to support it."
         )
 
 
@@ -157,6 +172,7 @@ def _parse_segments(result: _SegmentExtraction, chunk_index: int) -> List[Segmen
                 confidence=ad_data.get("confidence"),
                 topic_tags=[t.lower().strip() for t in raw_tags if isinstance(t, str) and t.strip()],
                 unresolved_reference=ad_data.get("unresolved_reference") if seg_data.get("context_unclear") else None,
+                action_category=ad_data.get("action_category"),
             )
 
         segments.append(Segment(
@@ -201,13 +217,14 @@ For each segment, identify:
 - intent: suggestion | information | question | decision | action_item | agreement | clarification
 - resolved_context: What this refers to (if applicable, else empty string)
 - context_unclear: true if reference cannot be resolved from THIS chunk alone
-- action_details: Only for action_item intent:
+  - action_details: Only for action_item intent:
   - description: FULL, SELF-CONTAINED description of what needs to be done. Use context from the chunk to expand pronouns and references. BAD: "draft it", "writing that down", "add to list". GOOD: "Draft email to Client Delta to reset expectations, including phased delivery plan and scope change impact", "Note to circle back to flaky tests later", "Add task for fixing monitoring alert rules to list". Always include enough detail that someone reading only the description understands the action.
   - assignee: Who is responsible (name or role)
   - deadline: Timeline mentioned (e.g. "March 10", "after the meeting", "end of month") or null
   - confidence: 0.0-1.0
   - topic_tags: 2-4 short lowercase keywords capturing the SUBJECT of the action, independent of verb and phrasing. These are used to match the same task if it is described differently in another part of the transcript. Examples: ["client", "email", "scope"] for anything about a client email; ["tests", "backend", "flaky"] for anything about fixing flaky tests; ["alert", "monitoring", "rules"] for anything about monitoring alerts. Use the same tags even if the description wording differs.
   - unresolved_reference: ONLY when context_unclear=true — a short phrase describing what is being referenced that could not be resolved from this chunk alone. Example: if someone says "ill handle it" and "it" refers to something mentioned before this chunk, write the best guess of what "it" is (e.g. "the gateway migration task", "what John mentioned about the tests"). Leave null when context_unclear=false.
+  - action_category: Category of this action. Choose exactly one: "communication" (involves emailing, notifying, or messaging someone), "task" (involves fixing, investigating, reviewing, implementing, or tracking a work item in a ticket/backlog), "event" (involves scheduling or booking a meeting, session, or calendar event), "documentation" (involves writing, documenting, or creating reference material), "other" (none of the above).
 
 CRITICAL for description: Resolve "it", "that", "this", "that thing" from nearby turns in this chunk. If someone says "ill draft it after this", look for what "it" refers to (e.g. "update email to client") and write that in the description."""),
         ("human", "Extract segments from this chunk:\n\n{chunk}"),
@@ -493,6 +510,7 @@ def evidence_normalizer_node(state: GraphState) -> GraphState:
                 meeting_window=(seg.chunk_index, seg.chunk_index),
                 topic_tags=seg.action_details.topic_tags,
                 unresolved_reference=seg.action_details.unresolved_reference,
+                action_category=seg.action_details.action_category,
             ))
 
     logger.info("EvidenceNormalizer: Created %d action items from normalized segments", len(actions))
@@ -788,10 +806,20 @@ def action_finalizer_node(state: GraphState) -> GraphState:
             continue
 
         verb = action.verb or "do"
+
+        # When the verb is the generic placeholder "do", try to extract a real
+        # verb phrase from the beginning of the description (rule-based, no LLM).
+        if verb == "do":
+            m = _LEADING_VERB_RE.match(action.description)
+            if m:
+                verb = m.group(1).lower().replace(" ", "_")
+
         verb_normalizations = {
             "take care of": "fix",
+            "take_care_of": "fix",
             "handle": "fix",
             "deal with": "fix",
+            "deal_with": "fix",
             "send": "send",
             "email": "send",
             "review": "review",
@@ -816,6 +844,9 @@ def action_finalizer_node(state: GraphState) -> GraphState:
             confidence=action.confidence or 0.5,
             source_spans=list(set(action.source_spans)),
             meeting_window=action.meeting_window,
+            topic_tags=action.topic_tags,
+            unresolved_reference=action.unresolved_reference,
+            action_category=action.action_category,
         ))
 
     finalized.sort(key=lambda a: a.meeting_window[0] if a.meeting_window else 999)

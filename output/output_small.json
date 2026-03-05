@@ -1,0 +1,83 @@
+[
+  {
+    "description": "Circle back to discuss the status and resolution of flaky tests.",
+    "assignee": "John",
+    "deadline": "later",
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "53e19f234be4"
+    ],
+    "meeting_window": [
+      2,
+      2
+    ]
+  },
+  {
+    "description": "Draft an update email to the client to reset expectations.",
+    "assignee": "John",
+    "deadline": "after this meeting",
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "a03d291a2367"
+    ],
+    "meeting_window": [
+      3,
+      3
+    ]
+  },
+  {
+    "description": "Talk to finance about the log level issue and its implications.",
+    "assignee": "John",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "e2e220fe25a2"
+    ],
+    "meeting_window": [
+      6,
+      6
+    ]
+  },
+  {
+    "description": "Create a task for fixing the monitoring alert rules that didn't fire.",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "0e928d2a36c9"
+    ],
+    "meeting_window": [
+      6,
+      6
+    ]
+  },
+  {
+    "description": "Add the accessibility review to phase one to the task list.",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "Priya",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "e30968a43730",
+      "17560357b510"
+    ],
+    "meeting_window": [
+      7,
+      7
+    ]
+  }
+]

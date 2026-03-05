@@ -5,18 +5,18 @@ import sys
 from pathlib import Path
 
 # Add parent directory to path for config import
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import config
 
 # Handle both direct execution and module import
 try:
-    from .langgraph_workflow import extract_actions
+    from .workflow import extract_actions
 except ImportError:
     # If relative import fails, try absolute
-    from src.langgraph_workflow import extract_actions
+    from src.action_extractor.workflow import extract_actions
 
 # Log file name for LangGraph process
-LOG_FILE = "output_log.txt"
+LOG_FILE = "output/output_log.txt"
 
 # Configure logging to console (stderr) and to output_log file
 _log_format = "%(asctime)s [%(levelname)s] %(message)s"
@@ -36,6 +36,7 @@ def _setup_logging():
     root.addHandler(stderr_handler)
     # File (created when process runs; full log when process is done)
     try:
+        Path(LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(LOG_FILE, mode="w", encoding="utf-8")
         file_handler.setFormatter(formatter)
         root.addHandler(file_handler)
@@ -100,8 +101,8 @@ def main():
     _setup_logging()
 
     # Default files
-    default_input = "input.txt"
-    default_output = "output.json"
+    default_input = "input/input.txt"
+    default_output = "output/output.json"
 
     if len(sys.argv) < 2:
         # No arguments provided - use defaults
@@ -127,6 +128,7 @@ def main():
         
         # Write output
         logger.info("Writing output to: %s", output_file)
+        Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(actions, f, indent=2, ensure_ascii=False)
         

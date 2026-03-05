@@ -1,0 +1,603 @@
+[
+  {
+    "description": "Define the Minimum Viable Product (MVP) for the Client Delta delivery, ensuring it only includes a summary as per John's decision, to prevent scope creep and ensure clarity on core features.",
+    "assignee": "Sara",
+    "deadline": null,
+    "speaker": "Sara",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 0.8,
+    "source_spans": [
+      "890d427e871b"
+    ],
+    "meeting_window": [
+      2,
+      2
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Note down John's decision that the MVP should only include a summary.",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "Priya",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "12d5ca89a9dc"
+    ],
+    "meeting_window": [
+      3,
+      3
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Ask Alex from the other team about his availability to provide QA support for the project.",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "Priya",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "5886f2eea711",
+      "b1c51165e479"
+    ],
+    "meeting_window": [
+      3,
+      3
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Draft an update email to the client to reset expectations regarding the project timeline.",
+    "assignee": "John",
+    "deadline": "after this (meeting)",
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "90545ca82fb5"
+    ],
+    "meeting_window": [
+      4,
+      4
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Move the task of fixing the staging environment login to the top of his priority list.",
+    "assignee": "Mike",
+    "deadline": "this week",
+    "speaker": "Mike",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "1e4860599a2e",
+      "dc201413195e"
+    ],
+    "meeting_window": [
+      4,
+      4
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Send the staging environment link to the team when it is ready (after the login issue is fixed).",
+    "assignee": "Mike",
+    "deadline": null,
+    "speaker": "Sara",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "d20f504d1a8f",
+      "6b69e57f53a5"
+    ],
+    "meeting_window": [
+      4,
+      4
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Schedule a bug bash session.",
+    "assignee": "John",
+    "deadline": "March 10",
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 0.8,
+    "source_spans": [
+      "b46c394067d8"
+    ],
+    "meeting_window": [
+      5,
+      5
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Priya should add the task for Mike to write a deploy runbook to Mike's task list.",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "faf312936740"
+    ],
+    "meeting_window": [
+      5,
+      5
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Mike should document the production deployment process.",
+    "assignee": "Mike",
+    "deadline": null,
+    "speaker": "Mike",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "25b6c7a15dfb",
+      "7836a7974d4f"
+    ],
+    "meeting_window": [
+      5,
+      5
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Add task to list to talk to the infrastructure team about the database migration issue related to rollbacks.",
+    "assignee": "John",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "b8d2a63ba55b"
+    ],
+    "meeting_window": [
+      6,
+      6
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Find time to schedule the dry run rollback in the staging environment.",
+    "assignee": "Priya",
+    "deadline": "this sprint",
+    "speaker": "Priya",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "fe9d71e32d08"
+    ],
+    "meeting_window": [
+      6,
+      6
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "John will talk to the finance department to inform them about the debug in production issue.",
+    "assignee": "John",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "cff9736cbcfd"
+    ],
+    "meeting_window": [
+      7,
+      7
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Add the accessibility review to Phase One of the project plan.",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "1935f82e7728"
+    ],
+    "meeting_window": [
+      7,
+      7
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Priya needs to create a task to fix the monitoring alert rules that failed to fire during the debug in production incident.",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "ead0a9cedf1d",
+      "7b3a4280d85b"
+    ],
+    "meeting_window": [
+      7,
+      7
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Set up a short sprint retrospective before the release.",
+    "assignee": "Priya",
+    "deadline": "before release",
+    "speaker": "Priya",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "b6f0bf02f657"
+    ],
+    "meeting_window": [
+      8,
+      8
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Bring a photo of a croissant for the virtual snacks during the retrospective.",
+    "assignee": "Sara",
+    "deadline": null,
+    "speaker": "Sara",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "5d8ddca3086b"
+    ],
+    "meeting_window": [
+      8,
+      8
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Add Maya from product to the client email thread.",
+    "assignee": "John",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "c3980373311c"
+    ],
+    "meeting_window": [
+      9,
+      9
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Ping Maya to check her availability and status.",
+    "assignee": "John",
+    "deadline": "after this call",
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "0fcc9f2d2c16"
+    ],
+    "meeting_window": [
+      9,
+      9
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Dig up the sandbox documentation from the payment provider, which can serve as a testing guide.",
+    "assignee": "Mike",
+    "deadline": null,
+    "speaker": "Mike",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "d68a3cebfca1"
+    ],
+    "meeting_window": [
+      10,
+      10
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Mike needs to test the retry logic for payment failures.",
+    "assignee": "Mike",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "e5d9f4f117e3"
+    ],
+    "meeting_window": [
+      10,
+      10
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Priya will add payment flow edge cases to the test plan.",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "Priya",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "54807f436e53"
+    ],
+    "meeting_window": [
+      11,
+      11
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Mike will add documentation about what test card numbers to use to the runbook.",
+    "assignee": "Mike",
+    "deadline": null,
+    "speaker": "Mike",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "3290a10d7c7a"
+    ],
+    "meeting_window": [
+      11,
+      11
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Sara will own the user guide draft.",
+    "assignee": "Sara",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "94f23c12fb9b"
+    ],
+    "meeting_window": [
+      11,
+      11
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Verify if the duplicate email signup edge case is handled within the new user onboarding flow.",
+    "assignee": "Mike",
+    "deadline": null,
+    "speaker": "Mike",
+    "verb": "fix",
+    "object_text": null,
+    "confidence": 0.9,
+    "source_spans": [
+      "7bbfd4aca2d4"
+    ],
+    "meeting_window": [
+      12,
+      12
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Add the task of verifying the duplicate email signup edge case for the new user onboarding flow to the test plan.",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "30e348a4b18d"
+    ],
+    "meeting_window": [
+      12,
+      12
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Perform a quick check of the mobile responsiveness of the new user onboarding flow on an actual mobile device (phone).",
+    "assignee": "Sara",
+    "deadline": null,
+    "speaker": "Sara",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "0a844fdad8bc",
+      "ddcab471fd22"
+    ],
+    "meeting_window": [
+      12,
+      12
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Add a thirty-second timeout with a friendly message.",
+    "assignee": "Mike",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "cfa450cdab8c"
+    ],
+    "meeting_window": [
+      13,
+      13
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Perform a pass to add error boundaries to critical components.",
+    "assignee": "Mike",
+    "deadline": null,
+    "speaker": "Mike",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "501bf13dc892",
+      "9569fed605d7"
+    ],
+    "meeting_window": [
+      13,
+      13
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Confirm the exact behavior of session expiry handling, specifically if it redirects to login.",
+    "assignee": "Mike",
+    "deadline": "today",
+    "speaker": "Mike",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "2d1d714581d2"
+    ],
+    "meeting_window": [
+      13,
+      13
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Add a task to the QA list to check session expiry handling.",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "Priya",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "345a7775a62b"
+    ],
+    "meeting_window": [
+      13,
+      13
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Prioritize the end-to-end testing of the password reset flow.",
+    "assignee": "Mike",
+    "deadline": null,
+    "speaker": "Mike",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "cdcdea76bb5f"
+    ],
+    "meeting_window": [
+      13,
+      13
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Priya will check with the security team regarding the internal security review.",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "Priya",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "5bbede222eee"
+    ],
+    "meeting_window": [
+      14,
+      14
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  },
+  {
+    "description": "Schedule a test restore for the database backup strategy.",
+    "assignee": "John",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "74653ed075e9"
+    ],
+    "meeting_window": [
+      14,
+      14
+    ],
+    "topic_tags": [],
+    "unresolved_reference": null
+  }
+]

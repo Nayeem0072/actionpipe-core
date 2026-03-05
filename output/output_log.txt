@@ -1,0 +1,330 @@
+01:23:15 [INFO] No arguments provided, using defaults: input/input.txt -> output/output.json
+01:23:15 [INFO] Loading input file: input/input.txt
+01:23:15 [INFO] Reading transcript from plain text file: input/input.txt
+01:23:15 [INFO] Input loaded (5485 characters). Starting LangGraph extraction.
+01:23:15 [INFO] Starting action extraction workflow...
+01:23:15 [INFO] LangGraph workflow created successfully
+01:23:15 [INFO] Executing graph workflow...
+01:23:15 [INFO] [TIMING] Node segmenter: started
+01:23:15 [INFO] Segmenter: Starting chunking...
+01:23:15 [INFO] Segmenter: Found 130 speaker turns
+01:23:15 [INFO] Segmenter: Chunk index: 0, length: 1115
+01:23:15 [INFO] Segmenter: Chunk text: John: hey everyone can you hear me ok
+
+Sara: yeah yeah loud and clear i think mike is still joining
+
+Mike: hello sorry sorry wifi was doing the the thing again
+
+Priya: we can hear you mike
+
+John: cool cool alright so uh hows everyone doing today
+
+Sara: tired honestly too many back to back calls
+
+Priya: same here its been a week and its only wednesday
+
+Mike: haha yeah time is fake
+
+John: ok so main thing today is the phoenix project timeline and also client delta feedback
+
+Sara: oh yeah that email was kind of concerning
+
+Priya: which part the budget or the scope creep part
+
+Sara: mostly the scope part like they added analytics dashboard out of nowhere
+
+John: right so first timeline um where are we with backend api work
+
+Mike: so the auth service is done mostly except the refresh token logic which broke yesterday but i fixed i think
+
+Priya: did you push that or is it still local
+
+Mike: uh pushed but the tests are red but like not real red just flaky red
+
+Sara: wait flaky red is still red mike
+
+Mike: yeah but like emotionally green
+
+John: ok ok lets circle back to tests later
+
+Priya: writing that down
+01:23:15 [INFO] Segmenter: Chunk index: 20, length: 995
+01:23:15 [INFO] Segmenter: Chunk text: John: frontend status
+
+Sara: dashboard skeleton done charts not wired api still returning like old schema thing
+
+Mike: thats my bad the response shape changed and i forgot to ping you
+
+Sara: yeah that that that explains the exploding graph
+
+Priya: sorry small thing my dog is barking one sec
+
+Priya: okay back
+
+John: alright now client delta asked for delivery by march fifteenth which is… ambitious
+
+Sara: ambitious is polite
+
+Mike: impossible is the other word
+
+John: can we phase it maybe core features first
+
+Priya: yeah mvp style release
+
+Sara: we need to define mvp though otherwise mvp becomes everything
+
+Mike: [noise] sorry dropped my headset
+
+John: ok so mvp = auth dashboard basic reports no custom exports agreed
+
+Sara: wait reports means the summary table right not full analytics
+
+John: yeah summary only
+
+Priya: im noting that
+
+Mike: wait does mvp include role permissions or is that phase two
+
+John: good catch phase one basic roles only admin and user
+
+Sara: ok thats manageable
+01:23:15 [INFO] Segmenter: Chunk index: 40, length: 812
+01:23:15 [INFO] Segmenter: Chunk text: Priya: timeline wise backend how long mike
+
+Mike: if no more surprise fires maybe 10 days dev plus testing time which is theoretical
+
+Sara: frontend i need like a week after api stabilizes
+
+John: ok so roughly end of month internal
+
+Priya: client wont like that
+
+John: yeah but reality
+
+Sara: should we send them an update email today
+
+John: yes good point we need to reset expectations
+
+Mike: who sends that i sent the last one and they ghosted
+
+Sara: maybe better from john this time
+
+John: ok ill draft it after this
+
+Priya: can you include the phased delivery plan
+
+John: yep
+
+Sara: and mention scope change impact
+
+John: yes
+
+Mike: also can we schedule a bug bash session before release
+
+Sara: oh yeah thats useful
+
+John: ok add bug bash maybe march 10
+
+Priya: march 10 what time
+
+John: afternoon maybe 2 pm
+01:23:15 [INFO] Segmenter: Chunk index: 60, length: 766
+01:23:15 [INFO] Segmenter: Chunk text: Sara: works
+
+Mike: works
+
+Priya: ok
+
+John: next topic infrastructure cost spike
+
+Mike: yeah sorry about that logs went into infinite mode
+
+Sara: infinite mode sounds expensive
+
+Mike: it was spiritually infinite
+
+John: did we fix it
+
+Mike: yeah log level back to normal we were in debug in prod which is not ideal
+
+Priya: understatement
+
+Sara: do we need to inform finance
+
+John: probably ill talk to them
+
+Mike: also monitoring alerts didnt fire which is concerning
+
+Priya: we should create a task for fixing alert rules
+
+Sara: agreed
+
+John: priya can you track that
+
+Priya: yes adding to list
+
+Sara: small question are we still doing the accessibility review
+
+John: oh good point we skipped last sprint
+
+Mike: yeah sorry i was supposed to check color contrast thing
+01:23:15 [INFO] Segmenter: Chunk index: 80, length: 720
+01:23:15 [INFO] Segmenter: Chunk text: Sara: lets not forget that the client mentioned it in kickoff
+
+John: ok add accessibility review to phase one
+
+Priya: noted
+
+Mike: random but standup time tomorrow same
+
+Sara: yes 9 30
+
+Mike: 9 30 or 9 15 i wrote 9 15 somewhere
+
+Priya: calendar says 9 30
+
+John: 9 30
+
+Sara: okay
+
+John: any risks we havent talked about
+
+Mike: integration with payment gateway still using sandbox might behave differently live
+
+Sara: oh thats scary
+
+Priya: do we need extra testing window
+
+John: yes good call
+
+Mike: sorry one second my screen just went black no wait its back
+
+Sara: ASR tools are gonna hate this meeting
+
+John: haha
+
+Priya: do we have owner for documentation
+
+Sara: oh shoot not really
+
+Mike: docs are a social construct
+01:23:15 [INFO] Segmenter: Chunk index: 100, length: 711
+01:23:15 [INFO] Segmenter: Chunk text: John: sara can you own user guide draft
+
+Sara: yeah okay but need inputs from you both
+
+Mike: sure
+
+Priya: we also need release checklist
+
+John: right
+
+Sara: coffee break when
+
+Mike: now
+
+John: focus mike
+
+Sara: sorry someone said something about a banana earlier or was that another meeting
+
+Priya: i think that was grocery delivery
+
+Mike: yeah ignore
+
+John: okay wrapping up action recap um wait did we talk about security review
+
+Sara: oh no
+
+Mike: oh no squared
+
+John: we need at least internal review
+
+Priya: ill check with security team
+
+Mike: also backup strategy for database i dont remember if we tested restore
+
+Sara: that sentence made me anxious
+
+John: yeah lets schedule test restore
+
+Priya: adding
+01:23:15 [INFO] Segmenter: Chunk index: 120, length: 225
+01:23:15 [INFO] Segmenter: Chunk text: Mike: sorry audio glitching robotic voice mode
+
+Sara: sounds like a transformer
+
+John: okay anything else
+
+Sara: nope
+
+Mike: all good
+
+Priya: done
+
+John: alright thanks everyone talk tomorrow
+
+Sara: bye
+
+Mike: bye
+
+Priya: bye
+01:23:15 [INFO] Segmenter: Created 7 chunks
+01:23:15 [INFO] [31m[TIMING] Node segmenter: completed in 0.00s[0m
+01:23:15 [INFO] [TIMING] Node parallel_extractor: started
+01:23:15 [INFO] ParallelExtractor: 6/7 chunks relevant, 1 skipped by keyword filter
+01:23:15 [INFO] ParallelExtractor: Launching 6 concurrent extraction tasks
+01:23:15 [INFO] AFC is enabled with max remote calls: 10.
+01:23:15 [INFO] AFC is enabled with max remote calls: 10.
+01:23:15 [INFO] AFC is enabled with max remote calls: 10.
+01:23:15 [INFO] AFC is enabled with max remote calls: 10.
+01:23:15 [INFO] AFC is enabled with max remote calls: 10.
+01:23:15 [INFO] AFC is enabled with max remote calls: 10.
+01:23:26 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+01:23:26 [INFO] ParallelExtractor: Chunk 3 completed, 13 segments
+01:23:27 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+01:23:27 [INFO] ParallelExtractor: Chunk 1 completed, 11 segments
+01:23:28 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+01:23:28 [INFO] ParallelExtractor: Chunk 5 completed, 10 segments
+01:23:29 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+01:23:29 [INFO] ParallelExtractor: Chunk 2 completed, 11 segments
+01:23:30 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+01:23:30 [INFO] ParallelExtractor: Chunk 4 completed, 11 segments
+01:23:35 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+01:23:35 [INFO] ParallelExtractor: Chunk 6 completed, 5 segments
+01:23:35 [INFO] ParallelExtractor: 61 total segments from 6 relevant chunks
+01:23:35 [INFO] [31m[TIMING] Node parallel_extractor: completed in 20.67s[0m
+01:23:35 [INFO] [TIMING] Node evidence_normalizer: started
+01:23:35 [INFO] EvidenceNormalizer: Normalizing 61 segments
+01:23:35 [INFO] EvidenceNormalizer: Dropping meta-action segment: 'writing that down'
+01:23:35 [INFO] EvidenceNormalizer: 60 segments after normalization
+01:23:35 [INFO] EvidenceNormalizer: Created 9 action items from normalized segments
+01:23:35 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.00s[0m
+01:23:35 [INFO] [TIMING] Node cross_chunk_resolver: started
+01:23:35 [INFO] CrossChunkResolver: Reviewing 9 actions across 7 chunks
+01:23:35 [INFO] AFC is enabled with max remote calls: 10.
+01:23:41 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+01:23:41 [INFO] CrossChunkResolver: 0 merge group(s), 0 update(s)
+01:23:41 [INFO] CrossChunkResolver: No changes needed
+01:23:41 [INFO] [31m[TIMING] Node cross_chunk_resolver: completed in 5.93s[0m
+01:23:41 [INFO] [TIMING] Node global_deduplicator: started
+01:23:41 [INFO] GlobalDeduplicator: Processing 9 actions
+01:23:41 [INFO] GlobalDeduplicator: Reduced 9 -> 9 actions
+01:23:41 [INFO] [31m[TIMING] Node global_deduplicator: completed in 0.00s[0m
+01:23:41 [INFO] [TIMING] Node action_finalizer: started
+01:23:41 [INFO] ActionFinalizer: Finalizing 9 actions
+01:23:41 [INFO] ActionFinalizer: Finalized 9 actions (source_spans, meeting_window)
+01:23:41 [INFO] [ACTION] #1 description=Note the agreed-upon MVP definition for Client Delta, which includes authentication, dashboard, basic reports (summary table only), basic roles (admin and user only), and no custom exports. | source_spans=['c8a8b754dce7'] | meeting_window=[1, 1]
+01:23:41 [INFO] [ACTION] #2 description=Draft an update email to the client to reset expectations, including the phased delivery plan and mentioning the scope change impact. | source_spans=['928086cc063f'] | meeting_window=[2, 2]
+01:23:41 [INFO] [ACTION] #3 description=Schedule a bug bash session before release for March 10th, afternoon around 2 PM. | source_spans=['6d389f2865c0'] | meeting_window=[2, 2]
+01:23:41 [INFO] [ACTION] #4 description=John will talk to the finance department to inform them about the infrastructure cost spike caused by logs going into debug mode in production. | source_spans=['c38558e96c2d'] | meeting_window=[3, 3]
+01:23:41 [INFO] [ACTION] #5 description=Priya will create a task to fix the monitoring alert rules that failed to fire during the recent log level incident. | source_spans=['d8bd7308a17b'] | meeting_window=[3, 3]
+01:23:41 [INFO] [ACTION] #6 description=Mike needs to check the color contrast as part of the accessibility review, which was skipped last sprint. | source_spans=['a1b1c5350523'] | meeting_window=[3, 3]
+01:23:41 [INFO] [ACTION] #7 description=Add an accessibility review to phase one of the project plan. | source_spans=['a938167962f7'] | meeting_window=[4, 4]
+01:23:41 [INFO] [ACTION] #8 description=Sara to own the user guide draft. | source_spans=['f4dd10b2944d'] | meeting_window=[5, 5]
+01:23:41 [INFO] [ACTION] #9 description=Priya to check with the security team regarding the security review. | source_spans=['767eb36c8da1'] | meeting_window=[5, 5]
+01:23:41 [INFO] [31m[TIMING] Node action_finalizer: completed in 0.00s[0m
+01:23:41 [INFO] Extraction complete: 9 actions extracted
+01:23:41 [INFO] Writing output to: output/output.json
+01:23:41 [INFO] Done. Extracted 9 action(s).
+01:23:41 [INFO] Results saved to output/output.json
+01:23:41 [INFO] Log saved to output/output_log.txt
