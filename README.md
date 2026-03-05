@@ -375,7 +375,7 @@ An execution log is written to `output_log.txt` with per-node timing, segment co
 
 ## Performance
 
-Measured on a 63-turn transcript (`input_very_small.txt`) with `ACTIVE_PROVIDER=gemini_mixed`:
+### Optimization impact (`input_very_small.txt`, 63 turns, `ACTIVE_PROVIDER=gemini_mixed`)
 
 | Stage | Before (sequential) | After (parallel + resolver) |
 |---|---|---|
@@ -386,7 +386,15 @@ Measured on a 63-turn transcript (`input_very_small.txt`) with `ACTIVE_PROVIDER=
 | Total runtime | ~92 s | ~23 s |
 | Actions extracted | 5 | 5+ (cross-chunk merges applied) |
 
-For large transcripts (500+ turns), the sequential design would take 10+ minutes. The parallel pipeline keeps total extraction time near the latency of a single LLM call (~10–20 s) regardless of transcript length. The cross-chunk resolver adds one fixed-cost sequential call (~5–10 s) that scales with the number of extracted actions, not the number of chunks.
+### Scaling across transcript sizes (`ACTIVE_PROVIDER=gemini_mixed`)
+
+| Transcript | Turns | Chunks | LLM calls | Extraction | Resolution | **Total** | Actions |
+|---|---|---|---|---|---|---|---|
+| `input_very_small.txt` | 63 | 4 | 4 + 1 | ~18 s | ~5 s | **~23 s** | 5 |
+| `input_small.txt` | 99 | 5 | 5 + 1 | ~20 s | ~10 s | **~30 s** | 9 |
+| `input.txt` | 259 | 7 (1 skipped) | 6 + 1 | ~21 s | ~5 s | **~27 s** | 9 |
+
+The key observation is that total runtime scales only weakly with transcript length. Going from 63 turns to 259 turns (4× more content) adds just ~4 s — because all chunks run in parallel and wall time is bounded by the **slowest single chunk**, not the sum. The cross-chunk resolver adds a fixed sequential pass of 5–10 s regardless of transcript size.
 
 ---
 
