@@ -1,14 +1,14 @@
-20:19:01 [INFO] Loading input file: input_large.txt
-20:19:01 [INFO] Reading transcript from plain text file: input_large.txt
-20:19:01 [INFO] Input loaded (12502 characters). Starting LangGraph extraction.
-20:19:01 [INFO] Starting action extraction workflow...
-20:19:01 [INFO] LangGraph workflow created successfully
-20:19:01 [INFO] Executing graph workflow...
-20:19:01 [INFO] [TIMING] Node segmenter: started
-20:19:01 [INFO] Segmenter: Starting chunking...
-20:19:01 [INFO] Segmenter: Found 300 speaker turns
-20:19:01 [INFO] Segmenter: Chunk index: 0, length: 950
-20:19:01 [INFO] Segmenter: Chunk text: John: hey everyone can you hear me ok
+21:39:35 [INFO] Loading input file: input_large.txt
+21:39:35 [INFO] Reading transcript from plain text file: input_large.txt
+21:39:35 [INFO] Input loaded (12502 characters). Starting LangGraph extraction.
+21:39:35 [INFO] Starting action extraction workflow...
+21:39:35 [INFO] LangGraph workflow created successfully
+21:39:35 [INFO] Executing graph workflow...
+21:39:35 [INFO] [TIMING] Node segmenter: started
+21:39:35 [INFO] Segmenter: Starting chunking...
+21:39:35 [INFO] Segmenter: Found 300 speaker turns
+21:39:35 [INFO] Segmenter: Chunk index: 0, length: 950
+21:39:35 [INFO] Segmenter: Chunk text: John: hey everyone can you hear me ok
 
 Sara: yeah yeah loud and clear i think mike is still joining
 
@@ -47,8 +47,8 @@ Priya: which part the budget or the scope creep part
 Sara: mostly the scope part like they added analytics dashboard out of nowhere
 
 John: right so first timeline um where are we with backend api work
-20:19:01 [INFO] Segmenter: Chunk index: 20, length: 1004
-20:19:01 [INFO] Segmenter: Chunk text: Mike: so the auth service is done mostly except the refresh token logic which broke yesterday but i fixed i think
+21:39:35 [INFO] Segmenter: Chunk index: 20, length: 1004
+21:39:35 [INFO] Segmenter: Chunk text: Mike: so the auth service is done mostly except the refresh token logic which broke yesterday but i fixed i think
 
 Priya: did you push that or is it still local
 
@@ -87,8 +87,8 @@ Sara: should we add that to the definition of done
 John: good idea yes
 
 Priya: ill update the dod document
-20:19:01 [INFO] Segmenter: Chunk index: 40, length: 985
-20:19:01 [INFO] Segmenter: Chunk text: Mike: wait we have a dod document
+21:39:35 [INFO] Segmenter: Chunk index: 40, length: 985
+21:39:35 [INFO] Segmenter: Chunk text: Mike: wait we have a dod document
 
 Priya: yes mike i sent it in slack three weeks ago
 
@@ -127,8 +127,8 @@ Mike: [noise] sorry dropped my headset
 John: ok so mvp = auth dashboard basic reports no custom exports agreed
 
 Sara: wait reports means the summary table right not full analytics
-20:19:01 [INFO] Segmenter: Chunk index: 60, length: 906
-20:19:01 [INFO] Segmenter: Chunk text: John: yeah summary only
+21:39:35 [INFO] Segmenter: Chunk index: 60, length: 906
+21:39:35 [INFO] Segmenter: Chunk text: John: yeah summary only
 
 Priya: im noting that
 
@@ -167,8 +167,8 @@ John: ok priya check with alex about QA support
 Priya: on it
 
 Sara: also what about user acceptance testing client side
-20:19:01 [INFO] Segmenter: Chunk index: 80, length: 840
-20:19:01 [INFO] Segmenter: Chunk text: John: good point should we set up a staging environment for them
+21:39:35 [INFO] Segmenter: Chunk index: 80, length: 840
+21:39:35 [INFO] Segmenter: Chunk text: John: good point should we set up a staging environment for them
 
 Mike: staging is technically set up but login doesnt work yet
 
@@ -207,8 +207,8 @@ Mike: who sends that i sent the last one and they ghosted
 Sara: maybe better from john this time
 
 John: ok ill draft it after this
-20:19:01 [INFO] Segmenter: Chunk index: 100, length: 645
-20:19:01 [INFO] Segmenter: Chunk text: Priya: can you include the phased delivery plan
+21:39:35 [INFO] Segmenter: Chunk index: 100, length: 645
+21:39:35 [INFO] Segmenter: Chunk text: Priya: can you include the phased delivery plan
 
 John: yep
 
@@ -247,8 +247,8 @@ Mike: a runbook right okay i can do that
 John: priya add that to mikes list
 
 Priya: already did
-20:19:01 [INFO] Segmenter: Chunk index: 120, length: 774
-20:19:01 [INFO] Segmenter: Chunk text: Sara: also do we have a rollback plan
+21:39:35 [INFO] Segmenter: Chunk index: 120, length: 774
+21:39:35 [INFO] Segmenter: Chunk text: Sara: also do we have a rollback plan
 
 Mike: uh kind of
 
@@ -287,8 +287,8 @@ Mike: yeah sorry about that logs went into infinite mode
 Sara: infinite mode sounds expensive
 
 Mike: it was spiritually infinite
-20:19:01 [INFO] Segmenter: Chunk index: 140, length: 841
-20:19:01 [INFO] Segmenter: Chunk text: John: did we fix it
+21:39:35 [INFO] Segmenter: Chunk index: 140, length: 841
+21:39:35 [INFO] Segmenter: Chunk text: John: did we fix it
 
 Mike: yeah log level back to normal we were in debug in prod which is not ideal
 
@@ -327,8 +327,8 @@ Mike: doing it loosely
 Sara: very loosely
 
 Priya: should we formalize it before release
-20:19:01 [INFO] Segmenter: Chunk index: 160, length: 699
-20:19:01 [INFO] Segmenter: Chunk text: John: yeah at minimum two approvals before merge to main
+21:39:35 [INFO] Segmenter: Chunk index: 160, length: 699
+21:39:35 [INFO] Segmenter: Chunk text: John: yeah at minimum two approvals before merge to main
 
 Mike: two might slow us down
 
@@ -367,8 +367,8 @@ John: agreed
 Mike: can we have virtual snacks
 
 Sara: i will bring a photo of a croissant
-20:19:01 [INFO] Segmenter: Chunk index: 180, length: 693
-20:19:01 [INFO] Segmenter: Chunk text: Mike: perfect
+21:39:35 [INFO] Segmenter: Chunk index: 180, length: 693
+21:39:35 [INFO] Segmenter: Chunk text: Mike: perfect
 
 John: one more thing have we synced with product on these scope decisions
 
@@ -407,8 +407,8 @@ John: 9 30
 Sara: okay
 
 John: any risks we havent talked about
-20:19:01 [INFO] Segmenter: Chunk index: 200, length: 935
-20:19:01 [INFO] Segmenter: Chunk text: Mike: integration with payment gateway still using sandbox might behave differently live
+21:39:35 [INFO] Segmenter: Chunk index: 200, length: 935
+21:39:35 [INFO] Segmenter: Chunk text: Mike: integration with payment gateway still using sandbox might behave differently live
 
 Sara: oh thats scary
 
@@ -447,8 +447,8 @@ Sara: yeah the numbers were going backwards
 Mike: thats technically how refunds work
 
 Sara: in the dream it was my bank account
-20:19:01 [INFO] Segmenter: Chunk index: 220, length: 716
-20:19:01 [INFO] Segmenter: Chunk text: John: okay lets keep moving
+21:39:35 [INFO] Segmenter: Chunk index: 220, length: 716
+21:39:35 [INFO] Segmenter: Chunk text: John: okay lets keep moving
 
 Priya: ill add payment flow edge cases to the test plan
 
@@ -487,8 +487,8 @@ Mike: now
 John: focus mike
 
 Sara: sorry someone said something about a banana earlier or was that another meeting
-20:19:01 [INFO] Segmenter: Chunk index: 240, length: 821
-20:19:01 [INFO] Segmenter: Chunk text: Priya: i think that was grocery delivery
+21:39:35 [INFO] Segmenter: Chunk index: 240, length: 821
+21:39:35 [INFO] Segmenter: Chunk text: Priya: i think that was grocery delivery
 
 Mike: yeah ignore
 
@@ -527,8 +527,8 @@ Sara: oh and loading states for slow connections
 Mike: those are placeholders right now
 
 Sara: yeah a timeout message would be better than infinite spinner
-20:19:01 [INFO] Segmenter: Chunk index: 260, length: 768
-20:19:01 [INFO] Segmenter: Chunk text: Mike: i can add a thirty second timeout with a friendly message
+21:39:35 [INFO] Segmenter: Chunk index: 260, length: 768
+21:39:35 [INFO] Segmenter: Chunk text: Mike: i can add a thirty second timeout with a friendly message
 
 John: yes do that
 
@@ -567,8 +567,8 @@ Mike: also forgot to mention password reset flow hasnt been end to end tested ye
 John: that needs to be done before release
 
 Mike: agreed putting it high priority
-20:19:01 [INFO] Segmenter: Chunk index: 280, length: 598
-20:19:01 [INFO] Segmenter: Chunk text: Priya: noted
+21:39:35 [INFO] Segmenter: Chunk index: 280, length: 598
+21:39:35 [INFO] Segmenter: Chunk text: Priya: noted
 
 John: okay wrapping up action recap um wait did we talk about security review
 
@@ -607,119 +607,121 @@ Sara: bye
 Mike: bye
 
 Priya: bye
-20:19:01 [INFO] Segmenter: Created 15 chunks
-20:19:01 [INFO] [31m[TIMING] Node segmenter: completed in 0.00s[0m
-20:19:01 [INFO] [TIMING] Node parallel_extractor: started
-20:19:01 [INFO] ParallelExtractor: 15/15 chunks relevant, 0 skipped by keyword filter
-20:19:01 [INFO] ParallelExtractor: Launching 15 concurrent extraction tasks
-20:19:02 [INFO] AFC is enabled with max remote calls: 10.
-20:19:02 [INFO] AFC is enabled with max remote calls: 10.
-20:19:02 [INFO] AFC is enabled with max remote calls: 10.
-20:19:02 [INFO] AFC is enabled with max remote calls: 10.
-20:19:02 [INFO] AFC is enabled with max remote calls: 10.
-20:19:02 [INFO] AFC is enabled with max remote calls: 10.
-20:19:10 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:10 [INFO] ParallelExtractor: Chunk 1 completed, 7 segments
-20:19:10 [INFO] AFC is enabled with max remote calls: 10.
-20:19:15 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:15 [INFO] ParallelExtractor: Chunk 2 completed, 12 segments
-20:19:15 [INFO] AFC is enabled with max remote calls: 10.
-20:19:18 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:18 [INFO] ParallelExtractor: Chunk 3 completed, 12 segments
-20:19:18 [INFO] AFC is enabled with max remote calls: 10.
-20:19:21 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:21 [INFO] ParallelExtractor: Chunk 4 completed, 11 segments
-20:19:21 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:21 [WARNING] Extractor: Chunk 6 (relevance=3) attempt 1 yielded only 3 segment(s) (expected >= 4, 20 turns) — retrying
-20:19:21 [INFO] AFC is enabled with max remote calls: 10.
-20:19:21 [INFO] AFC is enabled with max remote calls: 10.
-20:19:21 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:21 [WARNING] Extractor: Chunk 5 segment 11 has empty text, skipping
-20:19:21 [INFO] ParallelExtractor: Chunk 5 completed, 11 segments
-20:19:21 [INFO] AFC is enabled with max remote calls: 10.
-20:19:21 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:21 [INFO] ParallelExtractor: Chunk 7 completed, 14 segments
-20:19:21 [INFO] AFC is enabled with max remote calls: 10.
-20:19:28 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:28 [INFO] ParallelExtractor: Chunk 8 completed, 16 segments
-20:19:28 [INFO] AFC is enabled with max remote calls: 10.
-20:19:29 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:29 [INFO] ParallelExtractor: Chunk 9 completed, 9 segments
-20:19:29 [INFO] AFC is enabled with max remote calls: 10.
-20:19:32 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:32 [INFO] ParallelExtractor: Chunk 12 completed, 8 segments
-20:19:32 [INFO] AFC is enabled with max remote calls: 10.
-20:19:34 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:34 [INFO] ParallelExtractor: Chunk 10 completed, 18 segments
-20:19:37 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:37 [INFO] ParallelExtractor: Chunk 11 completed, 13 segments
-20:19:40 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:40 [WARNING] Extractor: Chunk 6 (relevance=3) attempt 2 yielded only 3 segment(s) (expected >= 4, 20 turns) — retrying
-20:19:40 [INFO] AFC is enabled with max remote calls: 10.
-20:19:44 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:44 [INFO] ParallelExtractor: Chunk 15 completed, 7 segments
-20:19:44 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:44 [INFO] ParallelExtractor: Chunk 14 completed, 13 segments
-20:19:45 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:45 [INFO] ParallelExtractor: Chunk 13 completed, 13 segments
-20:19:59 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:19:59 [INFO] ParallelExtractor: Chunk 6 completed, 10 segments
-20:19:59 [INFO] ParallelExtractor: 174 total segments from 15 relevant chunks
-20:19:59 [INFO] [31m[TIMING] Node parallel_extractor: completed in 58.42s[0m
-20:19:59 [INFO] [TIMING] Node evidence_normalizer: started
-20:19:59 [INFO] EvidenceNormalizer: Normalizing 174 segments
-20:19:59 [INFO] EvidenceNormalizer: Dropping meta-action segment: 'writing that down'
-20:19:59 [INFO] EvidenceNormalizer: Dropping duplicate segment: 'noted'
-20:19:59 [INFO] EvidenceNormalizer: Dropping meta-action segment: 'adding'
-20:19:59 [INFO] EvidenceNormalizer: 171 segments after normalization
-20:19:59 [INFO] EvidenceNormalizer: Created 36 action items from normalized segments
-20:19:59 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.01s[0m
-20:19:59 [INFO] [TIMING] Node cross_chunk_resolver: started
-20:19:59 [INFO] CrossChunkResolver: Reviewing 36 actions across 15 chunks
-20:19:59 [INFO] AFC is enabled with max remote calls: 10.
-20:20:18 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
-20:20:18 [INFO] CrossChunkResolver: 4 merge group(s), 0 update(s)
-20:20:18 [INFO] CrossChunkResolver: 36 actions → 32 after resolution
-20:20:18 [INFO] [31m[TIMING] Node cross_chunk_resolver: completed in 19.13s[0m
-20:20:18 [INFO] [TIMING] Node global_deduplicator: started
-20:20:18 [INFO] GlobalDeduplicator: Processing 32 actions
-20:20:18 [INFO] GlobalDeduplicator: Reduced 32 -> 29 actions
-20:20:18 [INFO] [31m[TIMING] Node global_deduplicator: completed in 0.00s[0m
-20:20:18 [INFO] [TIMING] Node action_finalizer: started
-20:20:18 [INFO] ActionFinalizer: Finalizing 29 actions
-20:20:19 [INFO] ActionFinalizer: Finalized 29 actions (source_spans, meeting_window)
-20:20:19 [INFO] [ACTION] #1 description=Verify if the refresh token issue is affecting session timeout. | source_spans=['cb485bc2d7af'] | meeting_window=[1, 1]
-20:20:19 [INFO] [ACTION] #2 description=Update the Definition of Done (DoD) document to include the requirement for 70% unit test coverage. | source_spans=['b15142c5b6ef'] | meeting_window=[1, 1]
-20:20:19 [INFO] [ACTION] #3 description=Note down the decision made by John to include only a summary in the relevant document or report. | source_spans=['12d5ca89a9dc'] | meeting_window=[3, 3]
-20:20:19 [INFO] [ACTION] #4 description=Move the task of fixing the staging environment login to the top of his priority list. | source_spans=['dc201413195e', '1e4860599a2e'] | meeting_window=[4, 4]
-20:20:19 [INFO] [ACTION] #5 description=Send the staging environment link to the team once the login is fixed and the environment is ready. | source_spans=['d20f504d1a8f', '6b69e57f53a5'] | meeting_window=[4, 4]
-20:20:19 [INFO] [ACTION] #6 description=Priya to add the task of writing a deploy runbook to Mike's task list. | source_spans=['8a7fffcbc29c'] | meeting_window=[5, 5]
-20:20:19 [INFO] [ACTION] #7 description=Mike to write a deploy runbook for the production deployment process. | source_spans=['7a40b62bdd69', '13ceede05526'] | meeting_window=[5, 5]
-20:20:19 [INFO] [ACTION] #8 description=Add task to list to talk to the infrastructure team about the database migration issue complicating rollbacks. | source_spans=['faa1c67a068f'] | meeting_window=[6, 6]
-20:20:19 [INFO] [ACTION] #9 description=Find time to schedule a dry run rollback in staging. | source_spans=['1191764e0058'] | meeting_window=[6, 6]
-20:20:19 [INFO] [ACTION] #10 description=John will talk to the finance department about the debug in production issue. | source_spans=['cff9736cbcfd'] | meeting_window=[7, 7]
-20:20:19 [INFO] [ACTION] #11 description=Priya to create and track a task for fixing the monitoring alert rules. | source_spans=['7b3a4280d85b'] | meeting_window=[7, 7]
-20:20:19 [INFO] [ACTION] #12 description=Set up a short sprint retrospective meeting before the release. | source_spans=['c9f88569b805'] | meeting_window=[8, 8]
-20:20:19 [INFO] [ACTION] #13 description=Bring a photo of a croissant for the virtual snacks during the retrospective. | source_spans=['df9a66040e87'] | meeting_window=[8, 8]
-20:20:19 [INFO] [ACTION] #14 description=Add Maya from product to the client email thread before sending the client email. | source_spans=['c3980373311c'] | meeting_window=[9, 9]
-20:20:19 [INFO] [ACTION] #15 description=Ping Maya to confirm her availability (e.g., if she is on vacation or stressed) after this call. | source_spans=['0fcc9f2d2c16'] | meeting_window=[9, 9]
-20:20:19 [INFO] [ACTION] #16 description=Mike will find and retrieve the payment provider's sandbox documentation. | source_spans=['d68a3cebfca1'] | meeting_window=[10, 10]
-20:20:19 [INFO] [ACTION] #17 description=Mike will add the task of testing the payment retry logic to his list. | source_spans=['1735d7cd6252', 'e5d9f4f117e3'] | meeting_window=[10, 10]
-20:20:19 [INFO] [ACTION] #18 description=Priya will add payment flow edge cases to the test plan. | source_spans=['c98dc3c5abf7', '54807f436e53'] | meeting_window=[11, 11]
-20:20:19 [INFO] [ACTION] #19 description=Mike will add the test card numbers to use to the runbook. | source_spans=['3290a10d7c7a'] | meeting_window=[11, 11]
-20:20:19 [INFO] [ACTION] #20 description=Sara will own the user guide draft, provided she receives inputs from John and Mike. | source_spans=['1e3910e745f7'] | meeting_window=[11, 11]
-20:20:19 [INFO] [ACTION] #21 description=Mike will provide inputs for the user guide draft to Sara. | source_spans=['1436ac26cdc4'] | meeting_window=[11, 11]
-20:20:19 [INFO] [ACTION] #22 description=Mike will verify if the duplicate email signup edge case is handled correctly within the new user onboarding flow. | source_spans=['1d9751ba88c5'] | meeting_window=[12, 12]
-20:20:19 [INFO] [ACTION] #23 description=Sara will perform a quick check of the mobile responsiveness of the new user onboarding flow on her phone. | source_spans=['98a516565e41', '76177a9fb995'] | meeting_window=[12, 12]
-20:20:19 [INFO] [ACTION] #24 description=Add a thirty second timeout with a friendly message. | source_spans=['cfa450cdab8c'] | meeting_window=[13, 13]
-20:20:19 [INFO] [ACTION] #25 description=Do a pass and add error boundaries to critical components. | source_spans=['9569fed605d7', '501bf13dc892'] | meeting_window=[13, 13]
-20:20:19 [INFO] [ACTION] #26 description=Confirm the behavior of session expiry handling (whether it redirects to login). | source_spans=['2d1d714581d2'] | meeting_window=[13, 13]
-20:20:19 [INFO] [ACTION] #27 description=Add a session expiry check to the QA list. | source_spans=['345a7775a62b'] | meeting_window=[13, 13]
-20:20:19 [INFO] [ACTION] #28 description=Ensure the end-to-end testing of the password reset flow is assigned high priority. | source_spans=['cdcdea76bb5f'] | meeting_window=[13, 13]
-20:20:19 [INFO] [ACTION] #29 description=Priya will check with the security team regarding the process or status of an internal security review. | source_spans=['5bbede222eee'] | meeting_window=[14, 14]
-20:20:19 [INFO] [31m[TIMING] Node action_finalizer: completed in 0.00s[0m
-20:20:19 [INFO] Extraction complete: 29 actions extracted
-20:20:19 [INFO] Writing output to: output_large.json
-20:20:19 [INFO] Done. Extracted 29 action(s).
-20:20:19 [INFO] Results saved to output_large.json
-20:20:19 [INFO] Log saved to output_log.txt
+21:39:35 [INFO] Segmenter: Created 15 chunks
+21:39:35 [INFO] [31m[TIMING] Node segmenter: completed in 0.00s[0m
+21:39:35 [INFO] [TIMING] Node parallel_extractor: started
+21:39:35 [INFO] ParallelExtractor: 15/15 chunks relevant, 0 skipped by keyword filter
+21:39:35 [INFO] ParallelExtractor: Launching 15 concurrent extraction tasks
+21:39:36 [INFO] AFC is enabled with max remote calls: 10.
+21:39:36 [INFO] AFC is enabled with max remote calls: 10.
+21:39:36 [INFO] AFC is enabled with max remote calls: 10.
+21:39:36 [INFO] AFC is enabled with max remote calls: 10.
+21:39:36 [INFO] AFC is enabled with max remote calls: 10.
+21:39:36 [INFO] AFC is enabled with max remote calls: 10.
+21:39:45 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:39:45 [INFO] ParallelExtractor: Chunk 1 completed, 7 segments
+21:39:45 [INFO] AFC is enabled with max remote calls: 10.
+21:39:51 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:39:51 [INFO] ParallelExtractor: Chunk 4 completed, 20 segments
+21:39:51 [INFO] AFC is enabled with max remote calls: 10.
+21:39:53 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:39:53 [INFO] ParallelExtractor: Chunk 3 completed, 12 segments
+21:39:53 [INFO] AFC is enabled with max remote calls: 10.
+21:39:55 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:39:55 [INFO] ParallelExtractor: Chunk 5 completed, 17 segments
+21:39:55 [INFO] AFC is enabled with max remote calls: 10.
+21:39:56 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:39:56 [WARNING] Extractor: Chunk 2 segment 5 has empty text, skipping
+21:39:56 [INFO] ParallelExtractor: Chunk 2 completed, 5 segments
+21:39:56 [INFO] AFC is enabled with max remote calls: 10.
+21:39:58 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:39:58 [WARNING] Extractor: Chunk 6 segment 2 has empty text, skipping
+21:39:58 [WARNING] Extractor: Chunk 6 (relevance=3) attempt 1 yielded only 2 segment(s) (expected >= 4, 20 turns) — retrying
+21:39:58 [INFO] AFC is enabled with max remote calls: 10.
+21:40:03 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:03 [INFO] ParallelExtractor: Chunk 7 completed, 10 segments
+21:40:03 [INFO] AFC is enabled with max remote calls: 10.
+21:40:05 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:05 [INFO] ParallelExtractor: Chunk 9 completed, 10 segments
+21:40:05 [INFO] AFC is enabled with max remote calls: 10.
+21:40:08 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:08 [INFO] ParallelExtractor: Chunk 10 completed, 18 segments
+21:40:08 [INFO] AFC is enabled with max remote calls: 10.
+21:40:10 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:10 [INFO] ParallelExtractor: Chunk 8 completed, 17 segments
+21:40:10 [INFO] AFC is enabled with max remote calls: 10.
+21:40:11 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:11 [INFO] ParallelExtractor: Chunk 11 completed, 13 segments
+21:40:14 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:14 [INFO] ParallelExtractor: Chunk 6 completed, 20 segments
+21:40:17 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:17 [INFO] ParallelExtractor: Chunk 12 completed, 5 segments
+21:40:20 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:20 [INFO] ParallelExtractor: Chunk 13 completed, 14 segments
+21:40:22 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:22 [INFO] ParallelExtractor: Chunk 15 completed, 6 segments
+21:40:24 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:24 [INFO] ParallelExtractor: Chunk 14 completed, 13 segments
+21:40:24 [INFO] ParallelExtractor: 187 total segments from 15 relevant chunks
+21:40:24 [INFO] [31m[TIMING] Node parallel_extractor: completed in 48.60s[0m
+21:40:24 [INFO] [TIMING] Node evidence_normalizer: started
+21:40:24 [INFO] EvidenceNormalizer: Normalizing 187 segments
+21:40:24 [INFO] EvidenceNormalizer: Dropping meta-action segment: 'writing that down'
+21:40:24 [INFO] EvidenceNormalizer: Dropping duplicate segment: 'works'
+21:40:24 [INFO] EvidenceNormalizer: Dropping duplicate segment: 'yes adding to list'
+21:40:24 [INFO] EvidenceNormalizer: 184 segments after normalization
+21:40:24 [INFO] EvidenceNormalizer: Created 40 action items from normalized segments
+21:40:24 [INFO] [31m[TIMING] Node evidence_normalizer: completed in 0.01s[0m
+21:40:24 [INFO] [TIMING] Node cross_chunk_resolver: started
+21:40:24 [INFO] CrossChunkResolver: Reviewing 40 actions across 15 chunks
+21:40:24 [INFO] AFC is enabled with max remote calls: 10.
+21:40:43 [INFO] HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 200 OK"
+21:40:43 [INFO] CrossChunkResolver: 5 merge group(s), 3 update(s)
+21:40:43 [INFO] CrossChunkResolver: 40 actions → 35 after resolution
+21:40:43 [INFO] [31m[TIMING] Node cross_chunk_resolver: completed in 18.96s[0m
+21:40:43 [INFO] [TIMING] Node global_deduplicator: started
+21:40:43 [INFO] GlobalDeduplicator: Processing 35 actions
+21:40:43 [INFO] GlobalDeduplicator: Reduced 35 -> 33 actions
+21:40:43 [INFO] [31m[TIMING] Node global_deduplicator: completed in 0.00s[0m
+21:40:43 [INFO] [TIMING] Node action_finalizer: started
+21:40:43 [INFO] ActionFinalizer: Finalizing 33 actions
+21:40:43 [INFO] ActionFinalizer: Finalized 33 actions (source_spans, meeting_window)
+21:40:43 [INFO] [ACTION] #1 description=Define the Minimum Viable Product (MVP) for the Client Delta delivery, ensuring it only includes a summary as per John's decision, to prevent scope creep and ensure clarity on core features. | source_spans=['890d427e871b'] | meeting_window=[2, 2]
+21:40:43 [INFO] [ACTION] #2 description=Note down John's decision that the MVP should only include a summary. | source_spans=['12d5ca89a9dc'] | meeting_window=[3, 3]
+21:40:43 [INFO] [ACTION] #3 description=Ask Alex from the other team about his availability to provide QA support for the project. | source_spans=['5886f2eea711', 'b1c51165e479'] | meeting_window=[3, 3]
+21:40:43 [INFO] [ACTION] #4 description=Draft an update email to the client to reset expectations regarding the project timeline. | source_spans=['90545ca82fb5'] | meeting_window=[4, 4]
+21:40:43 [INFO] [ACTION] #5 description=Move the task of fixing the staging environment login to the top of his priority list. | source_spans=['1e4860599a2e', 'dc201413195e'] | meeting_window=[4, 4]
+21:40:43 [INFO] [ACTION] #6 description=Send the staging environment link to the team when it is ready (after the login issue is fixed). | source_spans=['d20f504d1a8f', '6b69e57f53a5'] | meeting_window=[4, 4]
+21:40:43 [INFO] [ACTION] #7 description=Schedule a bug bash session. | source_spans=['b46c394067d8'] | meeting_window=[5, 5]
+21:40:43 [INFO] [ACTION] #8 description=Priya should add the task for Mike to write a deploy runbook to Mike's task list. | source_spans=['faf312936740'] | meeting_window=[5, 5]
+21:40:43 [INFO] [ACTION] #9 description=Mike should document the production deployment process. | source_spans=['25b6c7a15dfb', '7836a7974d4f'] | meeting_window=[5, 5]
+21:40:43 [INFO] [ACTION] #10 description=Add task to list to talk to the infrastructure team about the database migration issue related to rollbacks. | source_spans=['b8d2a63ba55b'] | meeting_window=[6, 6]
+21:40:43 [INFO] [ACTION] #11 description=Find time to schedule the dry run rollback in the staging environment. | source_spans=['fe9d71e32d08'] | meeting_window=[6, 6]
+21:40:43 [INFO] [ACTION] #12 description=John will talk to the finance department to inform them about the debug in production issue. | source_spans=['cff9736cbcfd'] | meeting_window=[7, 7]
+21:40:43 [INFO] [ACTION] #13 description=Add the accessibility review to Phase One of the project plan. | source_spans=['1935f82e7728'] | meeting_window=[7, 7]
+21:40:43 [INFO] [ACTION] #14 description=Priya needs to create a task to fix the monitoring alert rules that failed to fire during the debug in production incident. | source_spans=['ead0a9cedf1d', '7b3a4280d85b'] | meeting_window=[7, 7]
+21:40:43 [INFO] [ACTION] #15 description=Set up a short sprint retrospective before the release. | source_spans=['b6f0bf02f657'] | meeting_window=[8, 8]
+21:40:43 [INFO] [ACTION] #16 description=Bring a photo of a croissant for the virtual snacks during the retrospective. | source_spans=['5d8ddca3086b'] | meeting_window=[8, 8]
+21:40:43 [INFO] [ACTION] #17 description=Add Maya from product to the client email thread. | source_spans=['c3980373311c'] | meeting_window=[9, 9]
+21:40:43 [INFO] [ACTION] #18 description=Ping Maya to check her availability and status. | source_spans=['0fcc9f2d2c16'] | meeting_window=[9, 9]
+21:40:43 [INFO] [ACTION] #19 description=Dig up the sandbox documentation from the payment provider, which can serve as a testing guide. | source_spans=['d68a3cebfca1'] | meeting_window=[10, 10]
+21:40:43 [INFO] [ACTION] #20 description=Mike needs to test the retry logic for payment failures. | source_spans=['e5d9f4f117e3'] | meeting_window=[10, 10]
+21:40:43 [INFO] [ACTION] #21 description=Priya will add payment flow edge cases to the test plan. | source_spans=['54807f436e53'] | meeting_window=[11, 11]
+21:40:43 [INFO] [ACTION] #22 description=Mike will add documentation about what test card numbers to use to the runbook. | source_spans=['3290a10d7c7a'] | meeting_window=[11, 11]
+21:40:43 [INFO] [ACTION] #23 description=Sara will own the user guide draft. | source_spans=['94f23c12fb9b'] | meeting_window=[11, 11]
+21:40:43 [INFO] [ACTION] #24 description=Verify if the duplicate email signup edge case is handled within the new user onboarding flow. | source_spans=['7bbfd4aca2d4'] | meeting_window=[12, 12]
+21:40:43 [INFO] [ACTION] #25 description=Add the task of verifying the duplicate email signup edge case for the new user onboarding flow to the test plan. | source_spans=['30e348a4b18d'] | meeting_window=[12, 12]
+21:40:43 [INFO] [ACTION] #26 description=Perform a quick check of the mobile responsiveness of the new user onboarding flow on an actual mobile device (phone). | source_spans=['0a844fdad8bc', 'ddcab471fd22'] | meeting_window=[12, 12]
+21:40:43 [INFO] [ACTION] #27 description=Add a thirty-second timeout with a friendly message. | source_spans=['cfa450cdab8c'] | meeting_window=[13, 13]
+21:40:43 [INFO] [ACTION] #28 description=Perform a pass to add error boundaries to critical components. | source_spans=['501bf13dc892', '9569fed605d7'] | meeting_window=[13, 13]
+21:40:43 [INFO] [ACTION] #29 description=Confirm the exact behavior of session expiry handling, specifically if it redirects to login. | source_spans=['2d1d714581d2'] | meeting_window=[13, 13]
+21:40:43 [INFO] [ACTION] #30 description=Add a task to the QA list to check session expiry handling. | source_spans=['345a7775a62b'] | meeting_window=[13, 13]
+21:40:43 [INFO] [ACTION] #31 description=Prioritize the end-to-end testing of the password reset flow. | source_spans=['cdcdea76bb5f'] | meeting_window=[13, 13]
+21:40:43 [INFO] [ACTION] #32 description=Priya will check with the security team regarding the internal security review. | source_spans=['5bbede222eee'] | meeting_window=[14, 14]
+21:40:43 [INFO] [ACTION] #33 description=Schedule a test restore for the database backup strategy. | source_spans=['74653ed075e9'] | meeting_window=[14, 14]
+21:40:43 [INFO] [31m[TIMING] Node action_finalizer: completed in 0.00s[0m
+21:40:43 [INFO] Extraction complete: 33 actions extracted
+21:40:43 [INFO] Writing output to: output_large_new.json
+21:40:43 [INFO] Done. Extracted 33 action(s).
+21:40:43 [INFO] Results saved to output_large_new.json
+21:40:43 [INFO] Log saved to output_log.txt

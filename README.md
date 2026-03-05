@@ -393,8 +393,9 @@ An execution log is written to `output_log.txt` with per-node timing, segment co
 | `input_very_small.txt` | 63 | 4 | 4 + 1 | ~18 s | ~5 s | **~23 s** | 5 |
 | `input_small.txt` | 99 | 5 | 5 + 1 | ~20 s | ~10 s | **~30 s** | 9 |
 | `input.txt` | 130 | 7 (1 skipped) | 6 + 1 | ~21 s | ~5 s | **~27 s** | 9 |
+| `input_large.txt` | 300 | 15 | 15 + 1 | ~49 s | ~19 s | **~68 s** | 33 |
 
-The key observation is that total runtime scales only weakly with transcript length. Going from 63 turns to 259 turns (4× more content) adds just ~4 s — because all chunks run in parallel and wall time is bounded by the **slowest single chunk**, not the sum. The cross-chunk resolver adds a fixed sequential pass of 5–10 s regardless of transcript size.
+The key observation is that total runtime scales only weakly with transcript length for the extraction phase — all chunks run in parallel so wall time is bounded by the **slowest single chunk**, not the sum. Going from 63 turns to 300 turns (nearly 5× more content) adds ~31 s in extraction. The cross-chunk resolver scales with the number of extracted actions; with 33 actions across 15 chunks, resolution grows to ~19 s compared to ~5–10 s for smaller transcripts.
 
 ---
 
