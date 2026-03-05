@@ -1,102 +1,125 @@
 [
   {
-    "description": "Circle back to flaky tests to investigate and resolve the issue",
-    "assignee": "John",
-    "deadline": "later",
-    "speaker": "John",
-    "verb": "do",
-    "object_text": null,
-    "confidence": 0.85,
-    "source_spans": [
-      "cbefa1ccbd15"
-    ],
-    "meeting_window": [
-      2,
-      2
-    ]
-  },
-  {
-    "description": "Draft update email to client to reset expectations",
-    "assignee": "John",
-    "deadline": "after the meeting",
-    "speaker": "John",
-    "verb": "do",
-    "object_text": null,
-    "confidence": 0.85,
-    "source_spans": [
-      "f5ddcca3181f"
-    ],
-    "meeting_window": [
-      3,
-      3
-    ]
-  },
-  {
-    "description": "Schedule bug bash session for March 10 at 2 pm (afternoon)",
-    "assignee": "John",
-    "deadline": "March 10",
-    "speaker": "John",
-    "verb": "do",
-    "object_text": null,
-    "confidence": 0.85,
-    "source_spans": [
-      "39f2a02e3f28"
-    ],
-    "meeting_window": [
-      4,
-      4
-    ]
-  },
-  {
-    "description": "Talk to finance to inform them about the production debug logging issue",
-    "assignee": "John",
-    "deadline": null,
-    "speaker": "John",
-    "verb": "do",
-    "object_text": null,
-    "confidence": 0.9,
-    "source_spans": [
-      "e2e220fe25a2"
-    ],
-    "meeting_window": [
-      6,
-      6
-    ]
-  },
-  {
-    "description": "Create and track a task for fixing monitoring alert rules that failed to fire during the production incident",
-    "assignee": "Priya",
-    "deadline": null,
-    "speaker": "John",
-    "verb": "do",
-    "object_text": null,
-    "confidence": 0.95,
-    "source_spans": [
-      "90f9c0600572"
-    ],
-    "meeting_window": [
-      6,
-      6
-    ]
-  },
-  {
-    "description": "Add accessibility review to task list",
+    "description": "Note down the agreed-upon MVP scope for Client Delta delivery, specifically: authentication, dashboard, basic reports (summary table only), and no custom exports.",
     "assignee": "Priya",
     "deadline": null,
     "speaker": "Priya",
     "verb": "do",
     "object_text": null,
-    "confidence": 0.7,
+    "confidence": 1.0,
     "source_spans": [
-      "17560357b510"
+      "7acd1c9743cb"
     ],
     "meeting_window": [
-      7,
-      7
-    ]
+      1,
+      1
+    ],
+    "topic_tags": [
+      "mvp",
+      "scope",
+      "documentation",
+      "client delta"
+    ],
+    "unresolved_reference": null,
+    "action_category": "documentation"
   },
   {
-    "description": "Check color contrast for accessibility compliance",
+    "description": "Draft the update email to the client, including the phased delivery plan and mentioning the scope change impact.",
+    "assignee": "John",
+    "deadline": "after this",
+    "speaker": "John",
+    "verb": "draft",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "6261e0486577"
+    ],
+    "meeting_window": [
+      2,
+      2
+    ],
+    "topic_tags": [
+      "client",
+      "email",
+      "update",
+      "communication"
+    ],
+    "unresolved_reference": null,
+    "action_category": "communication"
+  },
+  {
+    "description": "Schedule a bug bash session for March 10, possibly in the afternoon around 2 PM.",
+    "assignee": "John",
+    "deadline": "March 10",
+    "speaker": "John",
+    "verb": "schedule",
+    "object_text": null,
+    "confidence": 0.8,
+    "source_spans": [
+      "0ae76324ef8c"
+    ],
+    "meeting_window": [
+      2,
+      2
+    ],
+    "topic_tags": [
+      "bug bash",
+      "release",
+      "scheduling",
+      "event"
+    ],
+    "unresolved_reference": null,
+    "action_category": "event"
+  },
+  {
+    "description": "John will talk to finance regarding the infrastructure cost spike caused by logs going into infinite debug mode in production.",
+    "assignee": "John",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "ddfa855f9980"
+    ],
+    "meeting_window": [
+      3,
+      3
+    ],
+    "topic_tags": [
+      "finance",
+      "cost spike",
+      "communication"
+    ],
+    "unresolved_reference": null,
+    "action_category": "communication"
+  },
+  {
+    "description": "Priya to create a task for fixing the monitoring alert rules that failed to fire when logs went into infinite mode, causing an infrastructure cost spike.",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "4492fa891e11"
+    ],
+    "meeting_window": [
+      3,
+      3
+    ],
+    "topic_tags": [
+      "monitoring",
+      "alerts",
+      "rules",
+      "task"
+    ],
+    "unresolved_reference": null,
+    "action_category": "task"
+  },
+  {
+    "description": "Mike needs to check the color contrast as part of the accessibility review, which was skipped last sprint.",
     "assignee": "Mike",
     "deadline": null,
     "speaker": "Mike",
@@ -104,11 +127,87 @@
     "object_text": null,
     "confidence": 0.8,
     "source_spans": [
-      "160ed0f28501"
+      "723baf6779ac"
     ],
     "meeting_window": [
-      7,
-      7
-    ]
+      3,
+      3
+    ],
+    "topic_tags": [
+      "accessibility",
+      "review",
+      "color contrast"
+    ],
+    "unresolved_reference": null,
+    "action_category": "task"
+  },
+  {
+    "description": "Add the task for an accessibility review to the first phase of the project.",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "add",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "a938167962f7"
+    ],
+    "meeting_window": [
+      4,
+      4
+    ],
+    "topic_tags": [
+      "accessibility",
+      "review",
+      "phase one"
+    ],
+    "unresolved_reference": null,
+    "action_category": "task"
+  },
+  {
+    "description": "Sara needs to own the user guide draft.",
+    "assignee": "Sara",
+    "deadline": null,
+    "speaker": "John",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "f4dd10b2944d"
+    ],
+    "meeting_window": [
+      5,
+      5
+    ],
+    "topic_tags": [
+      "user guide",
+      "documentation",
+      "draft"
+    ],
+    "unresolved_reference": null,
+    "action_category": "documentation"
+  },
+  {
+    "description": "Priya will check with the security team regarding the internal security review.",
+    "assignee": "Priya",
+    "deadline": null,
+    "speaker": "Priya",
+    "verb": "do",
+    "object_text": null,
+    "confidence": 1.0,
+    "source_spans": [
+      "615d00e96062"
+    ],
+    "meeting_window": [
+      5,
+      5
+    ],
+    "topic_tags": [
+      "security",
+      "review",
+      "team"
+    ],
+    "unresolved_reference": null,
+    "action_category": "communication"
   }
 ]

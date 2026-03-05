@@ -1,0 +1,296 @@
+[
+  {
+    "id": "1bc7c0cb",
+    "description": "Note down the agreed-upon MVP scope for Client Delta delivery, specifically: authentication, dashboard, basic reports (summary table only), and no custom exports.",
+    "assignee": "Priya",
+    "raw_deadline": null,
+    "normalized_deadline": null,
+    "speaker": "Priya",
+    "verb": "note_down",
+    "confidence": 1.0,
+    "tool_type": "create_notion_doc",
+    "tool_params": {
+      "page_title": "Down the agreed-upon mvp scope for client delta delivery, sp",
+      "content_hint": "Note down the agreed-upon MVP scope for Client Delta delivery, specifically: authentication, dashboard, basic reports (summary table only), and no custom exports.",
+      "template": "meeting-action"
+    },
+    "source_spans": [
+      "7acd1c9743cb"
+    ],
+    "parent_id": null,
+    "meeting_window": [
+      1,
+      1
+    ],
+    "action_category": "documentation",
+    "topic_tags": [
+      "mvp",
+      "scope",
+      "documentation",
+      "client delta"
+    ]
+  },
+  {
+    "id": "5bc18303",
+    "description": "Draft the update email to the client, including the phased delivery plan and mentioning the scope change impact.",
+    "assignee": "John",
+    "raw_deadline": "after this",
+    "normalized_deadline": "2026-03-05",
+    "speaker": "John",
+    "verb": "draft",
+    "confidence": 1.0,
+    "tool_type": "send_email",
+    "tool_params": {
+      "to": "John",
+      "subject_hint": "Draft the update email to the client, including the phased d",
+      "body_hint": "Draft the update email to the client, including the phased delivery plan and mentioning the scope change impact."
+    },
+    "source_spans": [
+      "6261e0486577"
+    ],
+    "parent_id": null,
+    "meeting_window": [
+      2,
+      2
+    ],
+    "action_category": "communication",
+    "topic_tags": [
+      "client",
+      "email",
+      "update",
+      "communication"
+    ]
+  },
+  {
+    "id": "b4a926e5",
+    "description": "Schedule a bug bash session for March 10, possibly in the afternoon around 2 PM.",
+    "assignee": "John",
+    "raw_deadline": "March 10",
+    "normalized_deadline": "2026-03-10",
+    "speaker": "John",
+    "verb": "schedule",
+    "confidence": 0.8,
+    "tool_type": "set_calendar",
+    "tool_params": {
+      "event_name": "Bug bash session for march 10, possibly in the afternoon around 2 pm.",
+      "date": "2026-03-10",
+      "time": null,
+      "participants": []
+    },
+    "source_spans": [
+      "0ae76324ef8c"
+    ],
+    "parent_id": null,
+    "meeting_window": [
+      2,
+      2
+    ],
+    "action_category": "event",
+    "topic_tags": [
+      "bug bash",
+      "release",
+      "scheduling",
+      "event"
+    ]
+  },
+  {
+    "id": "385bbc82",
+    "description": "John will talk to finance regarding the infrastructure cost spike caused by logs going into infinite debug mode in production.",
+    "assignee": "John",
+    "raw_deadline": null,
+    "normalized_deadline": null,
+    "speaker": "John",
+    "verb": "notify",
+    "confidence": 1.0,
+    "tool_type": "send_notification",
+    "tool_params": {
+      "recipient": "finance",
+      "channel": "slack",
+      "message_hint": "John will talk to finance regarding the infrastructure cost spike caused by logs going into infinite debug mode in production."
+    },
+    "source_spans": [
+      "ddfa855f9980"
+    ],
+    "parent_id": null,
+    "meeting_window": [
+      3,
+      3
+    ],
+    "action_category": "communication",
+    "topic_tags": [
+      "finance",
+      "cost spike",
+      "communication"
+    ]
+  },
+  {
+    "id": "06abc06b",
+    "description": "Priya to create a task for fixing the monitoring alert rules that failed to fire when logs went into infinite mode, causing an infrastructure cost spike.",
+    "assignee": "Priya",
+    "raw_deadline": null,
+    "normalized_deadline": null,
+    "speaker": "John",
+    "verb": "create",
+    "confidence": 1.0,
+    "tool_type": "create_jira_task",
+    "tool_params": {
+      "title": "Priya to create a task for fixing the monitoring alert rules that failed to fire when logs went into",
+      "assignee": "Priya",
+      "priority": "high",
+      "due_date": null,
+      "labels": [
+        "monitoring",
+        "alerts",
+        "rules",
+        "task"
+      ]
+    },
+    "source_spans": [
+      "4492fa891e11"
+    ],
+    "parent_id": null,
+    "meeting_window": [
+      3,
+      3
+    ],
+    "action_category": "task",
+    "topic_tags": [
+      "monitoring",
+      "alerts",
+      "rules",
+      "task"
+    ]
+  },
+  {
+    "id": "827f2948",
+    "description": "Mike needs to check the color contrast as part of the accessibility review, which was skipped last sprint.",
+    "assignee": "Mike",
+    "raw_deadline": null,
+    "normalized_deadline": null,
+    "speaker": "Mike",
+    "verb": "review",
+    "confidence": 0.8,
+    "tool_type": "create_jira_task",
+    "tool_params": {
+      "title": "Mike needs to check the color contrast as part of the accessibility review, which was skipped last s",
+      "assignee": "Mike",
+      "priority": "medium",
+      "due_date": null,
+      "labels": [
+        "accessibility",
+        "review",
+        "color contrast"
+      ]
+    },
+    "source_spans": [
+      "723baf6779ac"
+    ],
+    "parent_id": null,
+    "meeting_window": [
+      3,
+      3
+    ],
+    "action_category": "task",
+    "topic_tags": [
+      "accessibility",
+      "review",
+      "color contrast"
+    ]
+  },
+  {
+    "id": "86221f14",
+    "description": "Add the task for an accessibility review to the first phase of the project.",
+    "assignee": "Priya",
+    "raw_deadline": null,
+    "normalized_deadline": null,
+    "speaker": "John",
+    "verb": "add",
+    "confidence": 1.0,
+    "tool_type": "create_jira_task",
+    "tool_params": {
+      "title": "Add the task for an accessibility review to the first phase of the project.",
+      "assignee": "Priya",
+      "priority": "high",
+      "due_date": null,
+      "labels": [
+        "accessibility",
+        "review",
+        "phase one"
+      ]
+    },
+    "source_spans": [
+      "a938167962f7"
+    ],
+    "parent_id": null,
+    "meeting_window": [
+      4,
+      4
+    ],
+    "action_category": "task",
+    "topic_tags": [
+      "accessibility",
+      "review",
+      "phase one"
+    ]
+  },
+  {
+    "id": "9b138d25",
+    "description": "Sara needs to own the user guide draft.",
+    "assignee": "Sara",
+    "raw_deadline": null,
+    "normalized_deadline": null,
+    "speaker": "John",
+    "verb": "own",
+    "confidence": 1.0,
+    "tool_type": "create_notion_doc",
+    "tool_params": {
+      "page_title": "Sara needs to own the user guide draft.",
+      "content_hint": "Sara needs to own the user guide draft.",
+      "template": "meeting-action"
+    },
+    "source_spans": [
+      "f4dd10b2944d"
+    ],
+    "parent_id": null,
+    "meeting_window": [
+      5,
+      5
+    ],
+    "action_category": "documentation",
+    "topic_tags": [
+      "user guide",
+      "documentation",
+      "draft"
+    ]
+  },
+  {
+    "id": "16e21f10",
+    "description": "Priya will check with the security team regarding the internal security review.",
+    "assignee": "Priya",
+    "raw_deadline": null,
+    "normalized_deadline": null,
+    "speaker": "Priya",
+    "verb": "notify",
+    "confidence": 1.0,
+    "tool_type": "send_notification",
+    "tool_params": {
+      "recipient": null,
+      "channel": "slack",
+      "message_hint": "Priya will check with the security team regarding the internal security review."
+    },
+    "source_spans": [
+      "615d00e96062"
+    ],
+    "parent_id": null,
+    "meeting_window": [
+      5,
+      5
+    ],
+    "action_category": "communication",
+    "topic_tags": [
+      "security",
+      "review",
+      "team"
+    ]
+  }
+]
