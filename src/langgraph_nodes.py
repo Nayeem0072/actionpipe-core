@@ -17,6 +17,15 @@ logger = logging.getLogger(__name__)
 # Raise this if your API tier supports higher concurrency.
 _MAX_PARALLEL_CHUNKS = 6
 
+# Retry thresholds for under-extracted chunks.
+# A retry is only attempted when BOTH conditions hold:
+#   1. The chunk's relevance score is high (the chunk looks substantive).
+#   2. The segment yield is below the minimum expected ratio.
+# This prevents wasting retries on legitimately quiet/social stretches of conversation.
+_MIN_SEGMENTS_PER_TURN_RATIO = 1 / 5    # expect at least 1 segment per 5 turns
+_HIGH_RELEVANCE_SCORE_THRESHOLD = 3     # score >= 3 means the chunk has multiple action signals
+_MAX_EXTRACTION_RETRIES = 2             # up to 2 extra attempts after the original
+
 
 # ===========================================================================
 # LLM FACTORY
@@ -123,10 +132,56 @@ class _SegmentExtraction(PydanticBaseModel):
     segments: List[Dict[str, Any]]
 
 
-def _extract_single_chunk(chunk: str, chunk_index: int) -> List[Segment]:
+def _parse_segments(result: _SegmentExtraction, chunk_index: int) -> List[Segment]:
+    """
+    Convert a raw _SegmentExtraction result into typed Segment objects.
+    Segments with empty text are skipped and logged.
+    Extracted so retry attempts can call it without duplicating code.
+    """
+    segments = []
+    for idx, seg_data in enumerate(result.segments):
+        text = seg_data.get("text", "")
+        if not text:
+            logger.warning("Extractor: Chunk %d segment %d has empty text, skipping", chunk_index + 1, idx)
+            continue
+        span_id = hashlib.md5(f"{chunk_index}_{idx}_{text}".encode()).hexdigest()[:12]
+
+        action_details = None
+        if seg_data.get("intent") == "action_item" and seg_data.get("action_details"):
+            ad_data = seg_data["action_details"]
+            raw_tags = ad_data.get("topic_tags") or []
+            action_details = ActionDetails(
+                description=ad_data.get("description"),
+                assignee=ad_data.get("assignee"),
+                deadline=ad_data.get("deadline"),
+                confidence=ad_data.get("confidence"),
+                topic_tags=[t.lower().strip() for t in raw_tags if isinstance(t, str) and t.strip()],
+                unresolved_reference=ad_data.get("unresolved_reference") if seg_data.get("context_unclear") else None,
+            )
+
+        segments.append(Segment(
+            speaker=seg_data.get("speaker", ""),
+            text=text,
+            intent=seg_data.get("intent", "information"),
+            resolved_context=seg_data.get("resolved_context", ""),
+            context_unclear=seg_data.get("context_unclear", False),
+            action_details=action_details,
+            span_id=span_id,
+            chunk_index=chunk_index,
+        ))
+
+    return segments
+
+
+def _extract_single_chunk(chunk: str, chunk_index: int, relevance_score: int) -> List[Segment]:
     """
     Extract candidate segments from one chunk. Creates its own LLM instance so
     it is safe to call concurrently from multiple threads.
+
+    Retry logic: if the chunk looks substantive (relevance_score >= threshold) but the
+    LLM returns suspiciously few segments (< min_expected), retry up to
+    _MAX_EXTRACTION_RETRIES times. This catches partial/truncated structured-output
+    responses without wasting retries on legitimately quiet stretches of conversation.
     """
     llm = create_local_extractor_llm()
     structured_llm = llm.with_structured_output(_SegmentExtraction)
@@ -159,46 +214,54 @@ CRITICAL for description: Resolve "it", "that", "this", "that thing" from nearby
     ])
 
     chain = prompt | structured_llm
-    try:
-        result = chain.invoke({"chunk": chunk})
-    except Exception as e:
-        logger.error("Extractor: Chunk %d LLM call failed: %s", chunk_index + 1, e)
-        return []
 
-    segments = []
-    for idx, seg_data in enumerate(result.segments):
-        text = seg_data.get("text", "")
-        if not text:
-            logger.warning("Extractor: Chunk %d segment %d has empty text, skipping", chunk_index + 1, idx)
-            continue
-        span_id = hashlib.md5(f"{chunk_index}_{idx}_{text}".encode()).hexdigest()[:12]
+    # Chunks with fewer turns are expected to produce fewer segments.
+    # Count turns by the double-newline separator used by the segmenter.
+    turn_count = chunk.count("\n\n") + 1
+    min_expected = max(1, int(turn_count * _MIN_SEGMENTS_PER_TURN_RATIO))
+    # Only retry when the chunk looks substantive — prevents spurious retries on
+    # legitimately quiet or social stretches that correctly produce few segments.
+    should_retry_on_low_yield = relevance_score >= _HIGH_RELEVANCE_SCORE_THRESHOLD
 
-        action_details = None
-        if seg_data.get("intent") == "action_item" and seg_data.get("action_details"):
-            ad_data = seg_data["action_details"]
-            raw_tags = ad_data.get("topic_tags") or []
-            action_details = ActionDetails(
-                description=ad_data.get("description"),
-                assignee=ad_data.get("assignee"),
-                deadline=ad_data.get("deadline"),
-                confidence=ad_data.get("confidence"),
-                topic_tags=[t.lower().strip() for t in raw_tags if isinstance(t, str) and t.strip()],
-                unresolved_reference=ad_data.get("unresolved_reference") if seg_data.get("context_unclear") else None,
+    best_segments: List[Segment] = []
+    for attempt in range(1, _MAX_EXTRACTION_RETRIES + 2):  # 1 original + up to N retries
+        try:
+            result = chain.invoke({"chunk": chunk})
+        except Exception as e:
+            logger.error(
+                "Extractor: Chunk %d attempt %d LLM call failed: %s",
+                chunk_index + 1, attempt, e,
             )
+            if attempt <= _MAX_EXTRACTION_RETRIES:
+                continue
+            return best_segments
 
-        segment = Segment(
-            speaker=seg_data.get("speaker", ""),
-            text=text,
-            intent=seg_data.get("intent", "information"),
-            resolved_context=seg_data.get("resolved_context", ""),
-            context_unclear=seg_data.get("context_unclear", False),
-            action_details=action_details,
-            span_id=span_id,
-            chunk_index=chunk_index,
+        segments = _parse_segments(result, chunk_index)
+
+        if len(segments) > len(best_segments):
+            best_segments = segments
+
+        yield_ok = len(segments) >= min_expected
+        retries_left = attempt <= _MAX_EXTRACTION_RETRIES
+
+        if yield_ok or not should_retry_on_low_yield or not retries_left:
+            if not yield_ok:
+                logger.warning(
+                    "Extractor: Chunk %d (relevance=%d) yielded only %d segment(s) "
+                    "(expected >= %d, %d turns) after %d attempt(s) — using best result",
+                    chunk_index + 1, relevance_score, len(best_segments),
+                    min_expected, turn_count, attempt,
+                )
+            return best_segments
+
+        logger.warning(
+            "Extractor: Chunk %d (relevance=%d) attempt %d yielded only %d segment(s) "
+            "(expected >= %d, %d turns) — retrying",
+            chunk_index + 1, relevance_score, attempt,
+            len(segments), min_expected, turn_count,
         )
-        segments.append(segment)
 
-    return segments
+    return best_segments
 
 
 # ===========================================================================
@@ -267,11 +330,11 @@ def parallel_extractor_node(state: GraphState) -> GraphState:
     """
     chunks = state.get("chunks", [])
 
-    # Rule-based relevance filter — no LLM cost
-    relevant = [
-        (i, chunk) for i, chunk in enumerate(chunks)
-        if _score_chunk_relevance(chunk) >= 1
-    ]
+    # Rule-based relevance filter — no LLM cost.
+    # Compute the score once and keep it so it can be forwarded to the extractor
+    # for use in the retry guard.
+    scored = [(i, chunk, _score_chunk_relevance(chunk)) for i, chunk in enumerate(chunks)]
+    relevant = [(i, chunk, score) for i, chunk, score in scored if score >= 1]
     skipped = len(chunks) - len(relevant)
     logger.info(
         "ParallelExtractor: %d/%d chunks relevant, %d skipped by keyword filter",
@@ -283,22 +346,40 @@ def parallel_extractor_node(state: GraphState) -> GraphState:
         return {**state, "candidate_segments": []}
 
     all_segments: List[Segment] = []
+    # Map chunk index → segment list for post-hoc anomaly detection
+    chunk_segment_map: Dict[int, List[Segment]] = {}
     max_workers = min(len(relevant), _MAX_PARALLEL_CHUNKS)
 
     logger.info("ParallelExtractor: Launching %d concurrent extraction tasks", len(relevant))
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_chunk = {
-            executor.submit(_extract_single_chunk, chunk, idx): idx
-            for idx, chunk in relevant
+            executor.submit(_extract_single_chunk, chunk, idx, score): idx
+            for idx, chunk, score in relevant
         }
         for future in as_completed(future_to_chunk):
             idx = future_to_chunk[future]
             try:
                 segments = future.result()
                 all_segments.extend(segments)
+                chunk_segment_map[idx] = segments
                 logger.info("ParallelExtractor: Chunk %d completed, %d segments", idx + 1, len(segments))
             except Exception as exc:
                 logger.error("ParallelExtractor: Chunk %d raised an exception: %s", idx + 1, exc)
+                chunk_segment_map[idx] = []
+
+    # Post-hoc anomaly check: warn if any chunk's yield is far below the average.
+    # This catches failures that survived all retries (e.g. model consistently
+    # returns empty responses for a specific chunk).
+    if chunk_segment_map:
+        avg = sum(len(s) for s in chunk_segment_map.values()) / len(chunk_segment_map)
+        if avg > 0:
+            for idx, segs in chunk_segment_map.items():
+                if len(segs) < avg * 0.3:
+                    logger.warning(
+                        "ParallelExtractor: Chunk %d has only %d segment(s) vs avg %.1f "
+                        "— may be under-extracted even after retries",
+                        idx + 1, len(segs), avg,
+                    )
 
     # Restore original chunk order (as_completed returns in completion order)
     all_segments.sort(key=lambda s: s.chunk_index)
