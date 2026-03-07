@@ -1,6 +1,6 @@
 # API Documentation
 
-REST API for pipeline runs: create a run (upload meeting transcript + metadata), then subscribe to a Server-Sent Events (SSE) stream for real-time progress. The pipeline runs **extractor** then **normalizer**; executor is not yet wired.
+REST API for pipeline runs: create a run (upload meeting transcript + metadata), then subscribe to a Server-Sent Events (SSE) stream for real-time progress. The pipeline runs **extractor** → **normalizer** → **executor**.
 
 **Base URL (local):** `http://localhost:8000`  
 **Interactive docs:** `http://localhost:8000/docs`
@@ -18,7 +18,7 @@ python run_api.py
 | Method | Path | Description |
 |--------|------|-------------|
 | `POST` | `/runs` | Create a new pipeline run. Upload a file (or pass by reference), start processing, get `runId` and `streamUrl`. |
-| `GET`  | `/runs/{runId}/stream` | SSE stream for real-time progress (extractor then normalizer steps). |
+| `GET`  | `/runs/{runId}/stream` | SSE stream for real-time progress (extractor → normalizer → executor). |
 
 ---
 
@@ -113,7 +113,7 @@ curl -N -H "Accept: text/event-stream" \
 
 | Event | Description | Data payload |
 |-------|-------------|--------------|
-| `progress` | An agent is working on a step. | `agent`, `step`, `status`; optional `current`, `total` (e.g. chunks 8/11). |
+| `progress` | An agent is working on a step. | `agent`, `step`, `status`; optional `current`, `total` (e.g. Parallel Executor 8/11). |
 | `step_done` | One step of an agent finished. | `agent`, `step`. |
 | `agent_done` | Entire agent finished. | `agent` (`"extractor"` \| `"normalizer"` \| `"executor"`). |
 | `run_complete` | Whole pipeline finished. | Optional `summary` (e.g. `actions_extracted`). |
@@ -145,7 +145,18 @@ After the extractor, the **normalizer** runs. Steps follow the normalizer graph 
 | `deduplicator` | Remove duplicates by Jaccard similarity (same assignee, verb). |
 | `tool_classifier` | Classify into ToolType + extract tool params (rule-based + rare LLM). |
 
-### Example stream (extractor + normalizer)
+### Executor steps (SSE `step` values)
+
+After the normalizer, the **executor** runs. Steps follow the executor graph nodes:
+
+| Step | Description |
+|------|-------------|
+| `contact_resolver` | For each normalized action, resolve real contacts from the relation graph (LLM) and enrich `tool_params`. |
+| `mcp_dispatcher` | Dispatch each enriched action to the correct MCP server tool (Gmail, Calendar, Slack, Notion, Jira). Default is dry-run (no live calls). |
+
+See [Action Executor](action_executor.md) for pipeline and step details.
+
+### Example stream (extractor + normalizer + executor)
 
 ```
 event: progress
@@ -207,8 +218,23 @@ data: {"agent": "normalizer", "step": "tool_classifier"}
 event: agent_done
 data: {"agent": "normalizer"}
 
+event: progress
+data: {"agent": "executor", "step": "contact_resolver", "status": "running"}
+
+event: step_done
+data: {"agent": "executor", "step": "contact_resolver"}
+
+event: progress
+data: {"agent": "executor", "step": "mcp_dispatcher", "status": "running"}
+
+event: step_done
+data: {"agent": "executor", "step": "mcp_dispatcher"}
+
+event: agent_done
+data: {"agent": "executor"}
+
 event: run_complete
-data: {"summary": {"actions_extracted": 5, "actions_normalized": 4}}
+data: {"summary": {"actions_extracted": 5, "actions_normalized": 4, "actions_executed": 4}}
 ```
 
 ### Errors
@@ -221,7 +247,8 @@ data: {"summary": {"actions_extracted": 5, "actions_normalized": 4}}
 
 ## Pipeline (current behavior)
 
-The pipeline runs **extractor** then **normalizer**. Progress is emitted at node level for both. **Executor** is not run yet.
+The pipeline runs **extractor** → **normalizer** → **executor**. Progress is emitted at node level for all three.
 
 - **Extractor:** load_transcript → segmenter → parallel_extractor (with current/total) → evidence_normalizer → cross_chunk_resolver → global_deduplicator → action_finalizer.
 - **Normalizer:** deadline_normalizer → verb_enricher → action_splitter → deduplicator → tool_classifier.
+- **Executor:** contact_resolver (LLM + relation graph) → mcp_dispatcher (MCP tool calls or dry-run). See [Action Executor](action_executor.md).

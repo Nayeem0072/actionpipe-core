@@ -1,5 +1,5 @@
 """
-Pipeline runner for API runs: extractor → normalizer (executor excluded for now).
+Pipeline runner for API runs: extractor → normalizer → executor.
 
 Runs synchronously and calls an emit callback for each SSE event.
 The API runs this in a thread and wires emit to an asyncio.Queue via call_soon_threadsafe.
@@ -32,7 +32,7 @@ def run_pipeline_sync(
     contacts_path: str | None = None,
 ) -> None:
     """
-    Run the extractor then normalizer pipeline and emit SSE events.
+    Run the extractor → normalizer → executor pipeline and emit SSE events.
 
     emit_cb(event_type, data) is called from this thread; the API layer must
     use call_soon_threadsafe to put events on an asyncio.Queue.
@@ -47,6 +47,7 @@ def run_pipeline_sync(
         from src.action_extractor.main import load_transcript
         from src.action_extractor.workflow import extract_actions_with_progress
         from src.action_normalizer.workflow import normalize_actions_with_progress
+        from src.action_executor.workflow import execute_actions_with_progress
     except Exception as e:
         _emit(emit_cb, "error", {"message": str(e), "code": "import_error"})
         return
@@ -91,9 +92,31 @@ def run_pipeline_sync(
 
     logger.info("Normalizer done: %d action(s) -> %s", len(normalized), json.dumps(normalized, default=str, ensure_ascii=False))
     _emit(emit_cb, "agent_done", {"agent": "normalizer"})
+
+    # --- EXECUTOR ---
+    _emit(emit_cb, "progress", {
+        "agent": "executor",
+        "step": "contact_resolver",
+        "status": "running",
+    })
+    try:
+        results = execute_actions_with_progress(
+            normalized,
+            emit_cb,
+            dry_run=dry_run,
+            contacts_path=contacts_path,
+        )
+    except Exception as e:
+        logger.exception("Executor failed")
+        _emit(emit_cb, "error", {"message": str(e), "agent": "executor", "step": "execute"})
+        return
+
+    logger.info("Executor done: %d result(s) -> %s", len(results), json.dumps(results, default=str, ensure_ascii=False))
+    _emit(emit_cb, "agent_done", {"agent": "executor"})
     _emit(emit_cb, "run_complete", {
         "summary": {
             "actions_extracted": len(actions),
             "actions_normalized": len(normalized),
+            "actions_executed": len(results),
         },
     })

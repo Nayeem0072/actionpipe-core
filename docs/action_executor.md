@@ -4,6 +4,19 @@ Pipeline and node details for the action executor (Stage 3 — resolves real con
 
 ---
 
+## Steps (for Run / SSE API)
+
+The executor runs **two steps** in order. The Run and SSE APIs emit `progress` and `step_done` events for each.
+
+| Step | Description |
+|------|-------------|
+| **contact_resolver** | For each normalized action, the LLM picks the right connection from the relation graph and enriches `tool_params` (e.g. `to`, `participants`, `recipient`, `assignee`, `workspace`). |
+| **mcp_dispatcher** | Each enriched action is dispatched to the correct MCP server tool (Gmail, Calendar, Slack, Notion, Jira). In dry-run mode, no live calls are made; results are marked `dry_run`. |
+
+SSE events for the executor use `agent: "executor"` and `step: "contact_resolver"` or `step: "mcp_dispatcher"`.
+
+---
+
 ## Pipeline
 
 A two-node LangGraph graph. It consumes the normalizer's output (`normalized_output.json`) and produces an execution result for every action.
