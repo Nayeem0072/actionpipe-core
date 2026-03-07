@@ -7,13 +7,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import runs as runs_routes
 
-# Ensure api loggers (e.g. api.pipeline) output to console when running under uvicorn
-_api_logger = logging.getLogger("api")
-_api_logger.setLevel(logging.INFO)
-if not _api_logger.handlers:
+# Ensure api and src loggers (pipeline, executor, etc.) output to console when running under uvicorn
+_root = logging.getLogger()
+_root.setLevel(logging.INFO)
+if not _root.handlers:
     _handler = logging.StreamHandler(sys.stderr)
     _handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
-    _api_logger.addHandler(_handler)
+    _root.addHandler(_handler)
 
 app = FastAPI(
     title="Agent AI API",

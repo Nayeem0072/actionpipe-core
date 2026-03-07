@@ -102,14 +102,127 @@ class MCPDispatcher:
             action_id, tool_type, server_name, server_cfg, mcp_tool_name, params
         )
 
+    def _dispatch_one_dry(self, action: dict[str, Any]) -> dict[str, Any]:
+        """Synchronous single-action dry-run (no process spawn, no asyncio)."""
+        action_id: str = action.get("id", "unknown")
+        tool_type: str = action.get("tool_type", "general_task")
+        params: dict = action.get("tool_params", {})
+
+        server_name = self._tool_type_map.get(tool_type)
+        if not server_name:
+            return self._result(
+                action_id, tool_type, None, None, params,
+                status="skipped",
+                response=None,
+                error=f"No MCP server configured for tool_type '{tool_type}'",
+            )
+
+        server_cfg = self._servers.get(server_name, {})
+        mcp_tool_name: str = server_cfg.get("_mcpTool", tool_type)
+        return self._dry_run_result(
+            action_id, tool_type, server_name, mcp_tool_name, params
+        )
+
+    def dispatch_all_sync(self, actions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """
+        Dispatch all actions synchronously. For dry_run only; no process spawn, no asyncio.
+        Use this from the executor node when dry_run=True to avoid event-loop overhead.
+        """
+        if not self.dry_run:
+            raise RuntimeError("dispatch_all_sync is for dry_run only")
+        return [self._dispatch_one_dry(a) for a in actions]
+
     async def dispatch_all(
         self, actions: list[dict[str, Any]]
     ) -> list[dict[str, Any]]:
-        """Dispatch every action and collect results."""
-        results = []
-        for action in actions:
-            result = await self.dispatch(action)
-            results.append(result)
+        """Dispatch every action and collect results. In live mode, reuses one MCP client for the batch."""
+        if self.dry_run:
+            return self.dispatch_all_sync(actions)
+
+        # Live mode: one client for all servers, dispatch all actions without respawning
+        return await self._dispatch_all_live(actions)
+
+    async def _dispatch_all_live(
+        self, actions: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """Run all actions in live mode using a single MCP client (one process per server)."""
+        try:
+            from langchain_mcp_adapters.client import MultiServerMCPClient  # type: ignore
+        except ImportError:
+            return [
+                self._result(
+                    a.get("id", "?"), a.get("tool_type", "general_task"),
+                    None, None, a.get("tool_params", {}),
+                    status="error", response=None,
+                    error="langchain-mcp-adapters is not installed. Run: pip install langchain-mcp-adapters",
+                )
+                for a in actions
+            ]
+
+        server_spec: dict = {}
+        for name, cfg in self._servers.items():
+            server_spec[name] = {
+                "command": cfg.get("command", "npx"),
+                "args": cfg.get("args", []),
+                "env": _resolve_env_vars(cfg.get("env", {})),
+                "transport": "stdio",
+            }
+
+        results: list[dict[str, Any]] = []
+        try:
+            async with MultiServerMCPClient(server_spec) as client:
+                tools = client.get_tools()
+                tools_by_name = {t.name: t for t in tools}
+
+                for action in actions:
+                    action_id = action.get("id", "unknown")
+                    tool_type = action.get("tool_type", "general_task")
+                    params = action.get("tool_params", {})
+                    server_name = self._tool_type_map.get(tool_type)
+                    if not server_name:
+                        results.append(self._result(
+                            action_id, tool_type, None, None, params,
+                            status="skipped", response=None,
+                            error=f"No MCP server configured for tool_type '{tool_type}'",
+                        ))
+                        continue
+
+                    server_cfg = self._servers.get(server_name, {})
+                    mcp_tool_name = server_cfg.get("_mcpTool", tool_type)
+                    tool = tools_by_name.get(mcp_tool_name)
+                    if tool is None:
+                        available = list(tools_by_name.keys())
+                        results.append(self._result(
+                            action_id, tool_type, server_name, mcp_tool_name, params,
+                            status="error", response=None,
+                            error=f"Tool '{mcp_tool_name}' not found. Available: {available}",
+                        ))
+                        continue
+
+                    try:
+                        response = await tool.ainvoke(params)
+                        results.append(self._result(
+                            action_id, tool_type, server_name, mcp_tool_name, params,
+                            status="success", response=response, error=None,
+                        ))
+                    except Exception as exc:  # noqa: BLE001
+                        logger.exception("MCP dispatch failed for action %s", action_id)
+                        results.append(self._result(
+                            action_id, tool_type, server_name, mcp_tool_name, params,
+                            status="error", response=None, error=str(exc),
+                        ))
+
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("MCP client failed")
+            for action in actions:
+                if len(results) >= len(actions):
+                    break
+                results.append(self._result(
+                    action.get("id", "?"), action.get("tool_type", "general_task"),
+                    None, None, action.get("tool_params", {}),
+                    status="error", response=None, error=str(exc),
+                ))
+
         return results
 
     # ------------------------------------------------------------------

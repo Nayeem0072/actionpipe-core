@@ -105,6 +105,9 @@ def execute_actions_with_progress(
         if not isinstance(state, dict):
             continue
         final_state = state
+        # Skip initial state (no node has run yet: enriched_actions not yet set)
+        if node_index == 0 and not state.get("enriched_actions"):
+            continue
         if node_index < len(_EXECUTOR_NODE_ORDER):
             node_name = _EXECUTOR_NODE_ORDER[node_index]
             emit_cb("step_done", {"agent": "executor", "step": node_name})
