@@ -119,4 +119,5 @@ def run_pipeline_sync(
             "actions_normalized": len(normalized),
             "actions_executed": len(results),
         },
+        "executor_actions": results,
     })
