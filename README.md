@@ -61,6 +61,10 @@ python run_executor.py                       # reads output/normalized_output.js
 
 # 7. Live execution — actually call MCP servers (add credentials to .env first)
 python run_executor.py --live                # → output/execution_results.json
+
+# 8. Run the API server (file upload and other endpoints)
+pip install -r requirements.txt             # if not already installed
+python run_api.py                            # → http://localhost:8000, docs at /docs
 ```
 
 ---
@@ -87,6 +91,23 @@ Dependencies:
 | `python-dateutil` | Deadline parsing (`"March 10"` → `2026-03-10`) |
 | `mcp` | MCP server SDK (used by langchain-mcp-adapters) |
 | `langchain-mcp-adapters` | Wraps MCP server tools as callable LangChain tools |
+| `fastapi` | Web API framework |
+| `uvicorn` | ASGI server for FastAPI |
+| `python-multipart` | File upload support for FastAPI |
+
+### API (FastAPI)
+
+APIs live in the `api/` folder. To run the server:
+
+```bash
+python run_api.py
+```
+
+- **Docs:** http://localhost:8000/docs  
+
+**Endpoints**
+
+Full API reference: [docs/api.md](docs/api.md).
 
 ---
 
