@@ -100,3 +100,80 @@ def extract_actions(transcript_raw: str) -> list:
     logger.info("Extraction complete: %d actions extracted", len(actions))
 
     return [action.model_dump() if hasattr(action, "model_dump") else action for action in actions]
+
+
+# Node order for streaming progress (must match graph edges)
+_EXTRACTOR_NODE_ORDER = (
+    "segmenter",
+    "parallel_extractor",
+    "evidence_normalizer",
+    "cross_chunk_resolver",
+    "global_deduplicator",
+    "action_finalizer",
+)
+
+
+def extract_actions_with_progress(
+    transcript_raw: str,
+    progress_callback: callable,
+) -> list:
+    """
+    Extract action items from a transcript using LangGraph, streaming progress
+    events (step_done per node, progress with current/total for parallel_extractor).
+
+    Args:
+        transcript_raw: Raw transcript text.
+        progress_callback: Callable(event_type: str, data: dict). Called with
+            "progress" and "step_done" events for API SSE.
+
+    Returns:
+        List of Action objects serialized as dicts.
+    """
+    app = create_action_extraction_graph()
+    initial_state: GraphState = {
+        "transcript_raw": transcript_raw,
+        "chunks": [],
+        "chunk_index": 0,
+        "candidate_segments": [],
+        "unresolved_references": [],
+        "active_topics": {},
+        "merged_actions": [],
+        "emitted_text_spans": set(),
+        "progress_callback": progress_callback,
+    }
+
+    stream_mode = "values"
+    try:
+        stream = app.stream(initial_state, stream_mode=stream_mode)
+    except TypeError:
+        stream = app.stream(initial_state)
+
+    final_state = None
+    node_index = 0
+    for state in stream:
+        if not isinstance(state, dict):
+            continue
+        final_state = state
+        # LangGraph may yield initial state first (before any node runs). Skip it so we don't
+        # emit step_done(segmenter) and step_done(parallel_extractor) too early.
+        if node_index == 0 and not state.get("chunks"):
+            continue
+        if node_index < len(_EXTRACTOR_NODE_ORDER):
+            node_name = _EXTRACTOR_NODE_ORDER[node_index]
+            progress_callback("step_done", {"agent": "extractor", "step": node_name})
+            # Emit "running" for the next step immediately so the frontend doesn't show a gap
+            next_index = node_index + 1
+            if next_index < len(_EXTRACTOR_NODE_ORDER):
+                next_node = _EXTRACTOR_NODE_ORDER[next_index]
+                progress_callback("progress", {
+                    "agent": "extractor",
+                    "step": next_node,
+                    "status": "running",
+                })
+            node_index += 1
+
+    if not final_state:
+        return []
+
+    actions = final_state.get("merged_actions", [])
+    return [action.model_dump() if hasattr(action, "model_dump") else action for action in actions]

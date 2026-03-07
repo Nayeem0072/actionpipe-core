@@ -1,0 +1,254 @@
+# API Documentation
+
+REST API for pipeline runs: create a run (upload meeting transcript + metadata), then subscribe to a Server-Sent Events (SSE) stream for real-time progress. The pipeline runs **extractor** → **normalizer** → **executor**.
+
+**Base URL (local):** `http://localhost:8000`  
+**Interactive docs:** `http://localhost:8000/docs`
+
+Start the server from the project root:
+
+```bash
+python run_api.py
+```
+
+---
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/runs` | Create a new pipeline run. Upload a file (or pass by reference), start processing, get `runId` and `streamUrl`. |
+| `GET`  | `/runs/{runId}/stream` | SSE stream for real-time progress (extractor → normalizer → executor). |
+
+---
+
+## POST /runs
+
+Create a pipeline run. Processing starts asynchronously; use the returned `streamUrl` to consume progress via SSE.
+
+### Request
+
+**Content-Type:** either `multipart/form-data` or `application/json` (for upload by reference).
+
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `file` | file | Yes | Meeting transcript. Allowed: `.txt`, `.csv`, `.pdf`, `.doc`. Max size: **15 MB**. |
+| `meetingDate` | string | No | Date of the meeting, e.g. `YYYY-MM-DD`. |
+| `language` | string | No | Language code, e.g. `en`, `bn`. |
+
+**Example (curl):**
+
+```bash
+curl -X POST http://localhost:8000/runs \
+  -F "file=@/path/to/transcript.txt" \
+  -F "meetingDate=2026-03-07" \
+  -F "language=en"
+```
+
+
+### Response
+
+**Status:** `201 Created`
+
+**Body (JSON):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `runId` | string | Unique id for this run. Use it in the stream URL. |
+| `streamUrl` | string | Path to the SSE stream, e.g. `GET /runs/{runId}/stream`. |
+
+**Example:**
+
+```json
+{
+  "runId": "a1b2c3d4e5f6",
+  "streamUrl": "/runs/a1b2c3d4e5f6/stream"
+}
+```
+
+### Errors
+
+| Status | Condition |
+|--------|-----------|
+| `400` | Missing `file` (multipart) or `fileRef` (JSON); or file type not allowed (allowed: `.txt`, `.csv`, `.pdf`, `.doc`). |
+| `404` | JSON body: `fileRef` points to a path that does not exist. |
+| `413` | File larger than 15 MB. |
+
+---
+
+## GET /runs/{runId}/stream
+
+Real-time progress for the run. Streams Server-Sent Events until the pipeline finishes or errors.
+
+### Request
+
+| Item | Value |
+|------|--------|
+| **Path** | `runId` — from `POST /runs` response. |
+| **Headers** | `Accept: text/event-stream` (recommended). |
+
+**Example (curl):**
+
+```bash
+curl -N -H "Accept: text/event-stream" \
+  http://localhost:8000/runs/a1b2c3d4e5f6/stream
+```
+
+### Response
+
+**Status:** `200 OK`
+
+**Headers:**
+
+| Header | Value |
+|--------|--------|
+| `Content-Type` | `text/event-stream` |
+| `Cache-Control` | `no-cache` |
+| `Connection` | `keep-alive` |
+
+**Body:** SSE stream. Each message has an optional `event` type and a `data` line (JSON).
+
+### SSE event types
+
+| Event | Description | Data payload |
+|-------|-------------|--------------|
+| `progress` | An agent is working on a step. | `agent`, `step`, `status`; optional `current`, `total` (e.g. Parallel Executor 8/11). |
+| `step_done` | One step of an agent finished. | `agent`, `step`. |
+| `agent_done` | Entire agent finished. | `agent` (`"extractor"` \| `"normalizer"` \| `"executor"`). |
+| `run_complete` | Whole pipeline finished. | Optional `summary` (e.g. `actions_extracted`). |
+| `error` | Run or step failed. | `message`; optional `code`, `agent`, `step`. |
+
+### Extractor steps (SSE `step` values)
+
+Progress follows the extractor graph nodes so the frontend can show accurate steps:
+
+| Step | Description |
+|------|-------------|
+| `load_transcript` | Load transcript from the uploaded/referenced file. |
+| `segmenter` | Split transcript into chunks (by speaker turns, 20 turns per chunk). |
+| `parallel_extractor` | Extract segments from each chunk (LLM). Progress events with `current`/`total` (e.g. 7/12) as each chunk completes. |
+| `evidence_normalizer` | Clean ASR noise, drop meta-actions, convert segments to actions. |
+| `cross_chunk_resolver` | Merge cross-chunk duplicates, resolve vague references. |
+| `global_deduplicator` | Remove duplicate actions by similarity. |
+| `action_finalizer` | Schema enforcement, sort, drop low-confidence. |
+
+### Normalizer steps (SSE `step` values)
+
+After the extractor, the **normalizer** runs. Steps follow the normalizer graph nodes:
+
+| Step | Description |
+|------|-------------|
+| `deadline_normalizer` | Convert free-text deadlines to ISO dates; convert extractor actions to NormalizedAction. |
+| `verb_enricher` | Extract/upgrade verbs (rule-based + rare LLM fallback). |
+| `action_splitter` | Detect and split compound actions (LLM for candidates). |
+| `deduplicator` | Remove duplicates by Jaccard similarity (same assignee, verb). |
+| `tool_classifier` | Classify into ToolType + extract tool params (rule-based + rare LLM). |
+
+### Executor steps (SSE `step` values)
+
+After the normalizer, the **executor** runs. Steps follow the executor graph nodes:
+
+| Step | Description |
+|------|-------------|
+| `contact_resolver` | For each normalized action, resolve real contacts from the relation graph (LLM) and enrich `tool_params`. |
+| `mcp_dispatcher` | Dispatch each enriched action to the correct MCP server tool (Gmail, Calendar, Slack, Notion, Jira). Default is dry-run (no live calls). |
+
+See [Action Executor](action_executor.md) for pipeline and step details.
+
+### Example stream (extractor + normalizer + executor)
+
+```
+event: progress
+data: {"agent": "extractor", "step": "load_transcript", "status": "running"}
+
+event: step_done
+data: {"agent": "extractor", "step": "load_transcript"}
+
+event: step_done
+data: {"agent": "extractor", "step": "segmenter"}
+
+event: progress
+data: {"agent": "extractor", "step": "parallel_extractor", "status": "running", "current": 1, "total": 12}
+
+event: progress
+data: {"agent": "extractor", "step": "parallel_extractor", "status": "running", "current": 2, "total": 12}
+
+… (further parallel_extractor progress: 3/12, 4/12, …)
+
+event: step_done
+data: {"agent": "extractor", "step": "parallel_extractor"}
+
+event: step_done
+data: {"agent": "extractor", "step": "evidence_normalizer"}
+
+event: step_done
+data: {"agent": "extractor", "step": "cross_chunk_resolver"}
+
+event: step_done
+data: {"agent": "extractor", "step": "global_deduplicator"}
+
+event: step_done
+data: {"agent": "extractor", "step": "action_finalizer"}
+
+event: agent_done
+data: {"agent": "extractor"}
+
+event: progress
+data: {"agent": "normalizer", "step": "deadline_normalizer", "status": "running"}
+
+event: step_done
+data: {"agent": "normalizer", "step": "deadline_normalizer"}
+
+event: progress
+data: {"agent": "normalizer", "step": "verb_enricher", "status": "running"}
+
+event: step_done
+data: {"agent": "normalizer", "step": "verb_enricher"}
+
+event: step_done
+data: {"agent": "normalizer", "step": "action_splitter"}
+
+event: step_done
+data: {"agent": "normalizer", "step": "deduplicator"}
+
+event: step_done
+data: {"agent": "normalizer", "step": "tool_classifier"}
+
+event: agent_done
+data: {"agent": "normalizer"}
+
+event: progress
+data: {"agent": "executor", "step": "contact_resolver", "status": "running"}
+
+event: step_done
+data: {"agent": "executor", "step": "contact_resolver"}
+
+event: progress
+data: {"agent": "executor", "step": "mcp_dispatcher", "status": "running"}
+
+event: step_done
+data: {"agent": "executor", "step": "mcp_dispatcher"}
+
+event: agent_done
+data: {"agent": "executor"}
+
+event: run_complete
+data: {"summary": {"actions_extracted": 5, "actions_normalized": 4, "actions_executed": 4}}
+```
+
+### Errors
+
+| Status | Condition |
+|--------|-----------|
+| `404` | `runId` not found (invalid or run never created). |
+
+---
+
+## Pipeline (current behavior)
+
+The pipeline runs **extractor** → **normalizer** → **executor**. Progress is emitted at node level for all three.
+
+- **Extractor:** load_transcript → segmenter → parallel_extractor (with current/total) → evidence_normalizer → cross_chunk_resolver → global_deduplicator → action_finalizer.
+- **Normalizer:** deadline_normalizer → verb_enricher → action_splitter → deduplicator → tool_classifier.
+- **Executor:** contact_resolver (LLM + relation graph) → mcp_dispatcher (MCP tool calls or dry-run). See [Action Executor](action_executor.md).

@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import time
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +30,7 @@ def contact_resolver_node(state: ExecutorState) -> dict[str, Any]:
     Input  state keys: normalized_actions, contacts_path (optional)
     Output state keys: enriched_actions
     """
+    start = time.perf_counter()
     from src.relation_graph.resolver import ContactResolver
 
     contacts_path = state.get("contacts_path")
@@ -52,7 +54,12 @@ def contact_resolver_node(state: ExecutorState) -> dict[str, Any]:
             )
             enriched.append(action)
 
-    logger.info("contact_resolver_node: enriched %d actions", len(enriched))
+    elapsed = time.perf_counter() - start
+    logger.info(
+        "contact_resolver_node: enriched %d actions in %.2fs",
+        len(enriched),
+        elapsed,
+    )
     return {"enriched_actions": enriched}
 
 
@@ -85,14 +92,21 @@ def mcp_dispatcher_node(state: ExecutorState) -> dict[str, Any]:
     Input  state keys: enriched_actions, dry_run
     Output state keys: results
     """
+    start = time.perf_counter()
     enriched = state.get("enriched_actions", [])
     dry_run: bool = state.get("dry_run", True)
 
     dispatcher = MCPDispatcher(dry_run=dry_run)
 
-    results = asyncio.run(dispatcher.dispatch_all(enriched))
+    if dry_run:
+        # Sync path: no asyncio, no process spawn — fast
+        results = dispatcher.dispatch_all_sync(enriched)
+    else:
+        results = asyncio.run(dispatcher.dispatch_all(enriched))
 
+    elapsed = time.perf_counter() - start
     _log_results(results)
+    logger.info("mcp_dispatcher_node: completed %d dispatch(es) in %.2fs", len(results), elapsed)
     return {"results": results}
 
 

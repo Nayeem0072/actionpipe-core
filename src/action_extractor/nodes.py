@@ -322,7 +322,7 @@ def segmenter_node(state: GraphState) -> GraphState:
 
     logger.info("Segmenter: Created %d chunks", len(chunks))
 
-    return {
+    result = {
         **state,
         "chunks": chunks,
         "chunk_index": 0,
@@ -332,6 +332,14 @@ def segmenter_node(state: GraphState) -> GraphState:
         "merged_actions": [],
         "emitted_text_spans": set(),
     }
+    progress_cb = state.get("progress_callback")
+    if progress_cb and callable(progress_cb) and chunks:
+        progress_cb("progress", {
+            "agent": "extractor",
+            "step": "chunks",
+            "status": "running",
+        })
+    return result
 
 
 def parallel_extractor_node(state: GraphState) -> GraphState:
@@ -366,8 +374,11 @@ def parallel_extractor_node(state: GraphState) -> GraphState:
     # Map chunk index → segment list for post-hoc anomaly detection
     chunk_segment_map: Dict[int, List[Segment]] = {}
     max_workers = min(len(relevant), _MAX_PARALLEL_CHUNKS)
+    total_chunks = len(relevant)
+    progress_cb = state.get("progress_callback")
 
     logger.info("ParallelExtractor: Launching %d concurrent extraction tasks", len(relevant))
+    completed = 0
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_chunk = {
             executor.submit(_extract_single_chunk, chunk, idx, score): idx
@@ -379,7 +390,16 @@ def parallel_extractor_node(state: GraphState) -> GraphState:
                 segments = future.result()
                 all_segments.extend(segments)
                 chunk_segment_map[idx] = segments
-                logger.info("ParallelExtractor: Chunk %d completed, %d segments", idx + 1, len(segments))
+                completed += 1
+                if progress_cb and callable(progress_cb):
+                    progress_cb("progress", {
+                        "agent": "extractor",
+                        "step": "parallel_extractor",
+                        "status": "running",
+                        "current": completed,
+                        "total": total_chunks,
+                    })
+                logger.info("ParallelExtractor: Chunk %d completed, %d segments (%d/%d)", idx + 1, len(segments), completed, total_chunks)
             except Exception as exc:
                 logger.error("ParallelExtractor: Chunk %d raised an exception: %s", idx + 1, exc)
                 chunk_segment_map[idx] = []

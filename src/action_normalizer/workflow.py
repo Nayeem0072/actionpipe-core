@@ -116,3 +116,79 @@ def normalize_actions(
         a.model_dump(mode="json") if hasattr(a, "model_dump") else a
         for a in normalized
     ]
+
+
+# Node order for streaming progress (must match graph edges)
+_NORMALIZER_NODE_ORDER = (
+    "deadline_normalizer",
+    "verb_enricher",
+    "action_splitter",
+    "deduplicator",
+    "tool_classifier",
+)
+
+
+def normalize_actions_with_progress(
+    raw_actions: List[dict],
+    progress_callback: callable,
+    meeting_date: Optional[str] = None,
+) -> List[dict]:
+    """
+    Normalize raw actions with progress events (step_done per node) for SSE.
+
+    Args:
+        raw_actions: List of action dicts from the extractor.
+        progress_callback: Callable(event_type: str, data: dict). Called with
+            "progress" and "step_done" events for API SSE.
+        meeting_date: ISO 8601 date for deadline resolution.
+
+    Returns:
+        List of normalized action dicts.
+    """
+    if not raw_actions:
+        logger.info("NormalizerWorkflow: No actions to normalise")
+        return []
+
+    app = create_normalizer_graph()
+    initial_state: NormalizerState = {
+        "raw_actions": raw_actions,
+        "working_actions": [],
+        "meeting_date": meeting_date,
+    }
+
+    stream_mode = "values"
+    try:
+        stream = app.stream(initial_state, stream_mode=stream_mode)
+    except TypeError:
+        stream = app.stream(initial_state)
+
+    final_state = None
+    node_index = 0
+    for state in stream:
+        if not isinstance(state, dict):
+            continue
+        final_state = state
+        # Skip initial state (no node has run yet: working_actions still empty)
+        if node_index == 0 and not state.get("working_actions"):
+            continue
+        if node_index < len(_NORMALIZER_NODE_ORDER):
+            node_name = _NORMALIZER_NODE_ORDER[node_index]
+            progress_callback("step_done", {"agent": "normalizer", "step": node_name})
+            next_index = node_index + 1
+            if next_index < len(_NORMALIZER_NODE_ORDER):
+                next_node = _NORMALIZER_NODE_ORDER[next_index]
+                progress_callback("progress", {
+                    "agent": "normalizer",
+                    "step": next_node,
+                    "status": "running",
+                })
+            node_index += 1
+
+    if not final_state:
+        return []
+
+    normalized = final_state.get("working_actions", [])
+    return [
+        a.model_dump(mode="json") if hasattr(a, "model_dump") else a
+        for a in normalized
+    ]
