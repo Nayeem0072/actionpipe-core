@@ -116,7 +116,7 @@ curl -N -H "Accept: text/event-stream" \
 | `progress` | An agent is working on a step. | `agent`, `step`, `status`; optional `current`, `total` (e.g. Parallel Executor 8/11). |
 | `step_done` | One step of an agent finished. | `agent`, `step`. |
 | `agent_done` | Entire agent finished. | `agent` (`"extractor"` \| `"normalizer"` \| `"executor"`). |
-| `run_complete` | Whole pipeline finished. | Optional `summary` (e.g. `actions_extracted`). |
+| `run_complete` | Whole pipeline finished. | Optional `summary` (e.g. `actions_extracted`, `actions_normalized`, `actions_executed`); `executor_actions`: list of executor result objects (id, tool_type, server, mcp_tool, params, status, response, error). |
 | `error` | Run or step failed. | `message`; optional `code`, `agent`, `step`. |
 
 ### Extractor steps (SSE `step` values)
@@ -153,6 +153,44 @@ After the normalizer, the **executor** runs. Steps follow the executor graph nod
 |------|-------------|
 | `contact_resolver` | For each normalized action, resolve real contacts from the relation graph (LLM) and enrich `tool_params`. |
 | `mcp_dispatcher` | Dispatch each enriched action to the correct MCP server tool (Gmail, Calendar, Slack, Notion, Jira). Default is dry-run (no live calls). |
+
+### executor_actions (run_complete payload)
+
+When the pipeline finishes, the `run_complete` event includes an `executor_actions` array: one object per action that was sent to the executor. Each object has the following shape:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Action id (e.g. from extractor/normalizer). |
+| `tool_type` | string | Tool type, e.g. `send_email`, `create_calendar_event`. |
+| `server` | string | MCP server name, e.g. `gmail`, `google_calendar`. |
+| `mcp_tool` | string | MCP tool name invoked (often same as `tool_type`). |
+| `params` | object | Resolved tool parameters (e.g. `to`, `subject_hint`, `body_hint` for email). |
+| `status` | string | `"success"` \| `"dry_run"` \| `"skipped"` \| `"error"`. |
+| `response` | object \| null | Tool response; in dry-run, often `{ "preview": "Would invoke …" }`. |
+| `error` | string \| null | Error message when `status` is `"error"`. |
+
+**Example `executor_actions`:**
+
+```json
+[
+  {
+    "id": "ae69d78c",
+    "tool_type": "send_email",
+    "server": "gmail",
+    "mcp_tool": "send_email",
+    "params": {
+      "to": "client-delta@external.com",
+      "subject_hint": "Draft an update email to the client to reset expectations, i",
+      "body_hint": "Draft an update email to the client to reset expectations, including the phased delivery plan and mentioning the scope change impact."
+    },
+    "status": "dry_run",
+    "response": {
+      "preview": "Would invoke gmail/send_email"
+    },
+    "error": null
+  }
+]
+```
 
 See [Action Executor](action_executor.md) for pipeline and step details.
 
@@ -234,7 +272,7 @@ event: agent_done
 data: {"agent": "executor"}
 
 event: run_complete
-data: {"summary": {"actions_extracted": 5, "actions_normalized": 4, "actions_executed": 4}}
+data: {"summary": {"actions_extracted": 5, "actions_normalized": 4, "actions_executed": 4}, "executor_actions": [{"id": "...", "tool_type": "send_email", "status": "success", ...}]}
 ```
 
 ### Errors
