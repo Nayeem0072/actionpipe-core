@@ -17,8 +17,10 @@ python run_api.py
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/runs` | Create a new pipeline run. Upload a file (or pass by reference), start processing, get `runId` and `streamUrl`. |
-| `GET`  | `/runs/{runId}/stream` | SSE stream for real-time progress (extractor → normalizer → executor). |
+| `POST` | `/runs` | Create a new pipeline run. **Protected:** requires JWT. Upload a file (or pass by reference), start processing, get `runId` and `streamUrl`. |
+| `GET`  | `/runs/{runId}/stream` | SSE stream for real-time progress. **Protected:** requires JWT (header or `?token=`). |
+
+All protected routes accept the JWT via **`Authorization: Bearer <token>`** or, for SSE where headers may be limited, via the **`token`** query parameter (e.g. `/runs/{runId}/stream?token=<jwt>`). The token is validated (Auth0 JWT); the token's claims and the DB user (get-or-create) are available as request "user details".
 
 ---
 
@@ -27,6 +29,8 @@ python run_api.py
 Create a pipeline run. Processing starts asynchronously; use the returned `streamUrl` to consume progress via SSE.
 
 ### Request
+
+**Authentication:** required. Send JWT via `Authorization: Bearer <token>`.
 
 **Content-Type:** either `multipart/form-data` or `application/json` (for upload by reference).
 
@@ -41,6 +45,7 @@ Create a pipeline run. Processing starts asynchronously; use the returned `strea
 
 ```bash
 curl -X POST http://localhost:8000/runs \
+  -H "Authorization: Bearer <your-jwt>" \
   -F "file=@/path/to/transcript.txt" \
   -F "meetingDate=2026-03-07" \
   -F "language=en"
@@ -72,8 +77,10 @@ curl -X POST http://localhost:8000/runs \
 | Status | Condition |
 |--------|-----------|
 | `400` | Missing `file` (multipart) or `fileRef` (JSON); or file type not allowed (allowed: `.txt`, `.csv`, `.pdf`, `.doc`). |
+| `401` | Missing or invalid JWT (use `Authorization: Bearer <token>`). |
 | `404` | JSON body: `fileRef` points to a path that does not exist. |
 | `413` | File larger than 15 MB. |
+| `503` | Auth0 not configured or JWKS unavailable. |
 
 ---
 
@@ -86,13 +93,19 @@ Real-time progress for the run. Streams Server-Sent Events until the pipeline fi
 | Item | Value |
 |------|--------|
 | **Path** | `runId` — from `POST /runs` response. |
+| **Auth** | JWT via `Authorization: Bearer <token>` or query param `?token=<jwt>` (recommended for SSE). |
 | **Headers** | `Accept: text/event-stream` (recommended). |
 
 **Example (curl):**
 
 ```bash
-curl -N -H "Accept: text/event-stream" \
+# With Bearer header
+curl -N -H "Accept: text/event-stream" -H "Authorization: Bearer <your-jwt>" \
   http://localhost:8000/runs/a1b2c3d4e5f6/stream
+
+# With token query param (e.g. for EventSource)
+curl -N -H "Accept: text/event-stream" \
+  "http://localhost:8000/runs/a1b2c3d4e5f6/stream?token=<your-jwt>"
 ```
 
 ### Response
@@ -279,7 +292,9 @@ data: {"summary": {"actions_extracted": 5, "actions_normalized": 4, "actions_exe
 
 | Status | Condition |
 |--------|-----------|
+| `401` | Missing or invalid JWT (use header or `?token=`). |
 | `404` | `runId` not found (invalid or run never created). |
+| `503` | Auth0 not configured or JWKS unavailable. |
 
 ---
 
