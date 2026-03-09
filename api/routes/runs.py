@@ -6,14 +6,19 @@ Runs API: create pipeline runs (upload + details) and stream progress via SSE.
 """
 import asyncio
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.requests import Request
 from fastapi.responses import StreamingResponse
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth import UserDetails, get_user_details
+from api.db import async_session_factory, get_db
+from api.models import RunRequestLog, RunResponseLog
 from api.pipeline import run_pipeline_sync
 
 MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024  # 15 MB
@@ -41,6 +46,32 @@ def _sse_message(event_type: str | None, data: dict) -> str:
     return "\n".join(lines) + "\n\n"
 
 
+async def _log_run_response(run_id: str, event_type: str, data: dict) -> None:
+    """Persist a run response log for the given run_id."""
+    async with async_session_factory() as session:
+        try:
+            result = await session.execute(
+                select(RunRequestLog).where(RunRequestLog.run_id == run_id)
+            )
+            request_log = result.scalars().first()
+            if not request_log:
+                return
+            summary: dict[str, Any] = data.get("summary") or {}
+            status = "completed" if event_type == "run_complete" else data.get("status") or event_type
+            response_log = RunResponseLog(
+                request_id=request_log.id,
+                status=status,
+                actions_extracted=summary.get("actions_extracted"),
+                actions_normalized=summary.get("actions_normalized"),
+                actions_executed=summary.get("actions_executed"),
+                response_data=data,
+            )
+            session.add(response_log)
+            await session.commit()
+        except Exception:
+            await session.rollback()
+
+
 async def _run_pipeline_task(run_id: str, transcript_path: str, meeting_date: str | None, language: str | None) -> None:
     """Run pipeline in thread and push events to the run's queue."""
     run_state = _runs.get(run_id)
@@ -50,7 +81,13 @@ async def _run_pipeline_task(run_id: str, transcript_path: str, meeting_date: st
     loop = asyncio.get_event_loop()
 
     def put_event(event_type: str, data: dict) -> None:
+        # Queue SSE event
         loop.call_soon_threadsafe(queue.put_nowait, {"event": event_type, "data": data})
+        # Persist final summary or error when available
+        if event_type in ("run_complete", "error"):
+            def _schedule_log() -> None:
+                asyncio.create_task(_log_run_response(run_id, event_type, data))
+            loop.call_soon_threadsafe(_schedule_log)
 
     def run_in_thread() -> None:
         run_pipeline_sync(
@@ -76,6 +113,7 @@ async def _run_pipeline_task(run_id: str, transcript_path: str, meeting_date: st
 async def create_run(
     request: Request,
     user_details: Annotated[UserDetails, Depends(get_user_details)],
+    db: AsyncSession = Depends(get_db),
     file: UploadFile | None = File(None),
     meetingDate: str | None = Form(None),
     language: str | None = Form(None),
@@ -88,6 +126,8 @@ async def create_run(
     JSON: fileRef (path or id), meetingDate, language.
     """
     transcript_path: str
+    original_filename: str | None = None
+    stored_filename: str | None = None
     meeting_date_str: str | None = meetingDate
     language_str: str | None = language
 
@@ -108,6 +148,8 @@ async def create_run(
             if not candidate.exists():
                 raise HTTPException(status_code=404, detail=f"File not found: {ref}")
             transcript_path = str(candidate)
+        original_filename = ref
+        stored_filename = Path(transcript_path).name
     else:
         if not file or not file.filename:
             raise HTTPException(status_code=400, detail="file is required (multipart/form-data)")
@@ -128,10 +170,36 @@ async def create_run(
         dest = UPLOAD_DIR / safe_name
         dest.write_bytes(content)
         transcript_path = str(dest)
+        original_filename = file.filename
+        stored_filename = safe_name
 
     run_id = uuid.uuid4().hex
     queue: asyncio.Queue = asyncio.Queue()
     _runs[run_id] = {"queue": queue, "status": "pending"}
+
+    # Persist run request log
+    meeting_dt = None
+    if meeting_date_str:
+        try:
+            # Support both date-only (YYYY-MM-DD) and full ISO datetime strings
+            if "T" in meeting_date_str:
+                meeting_dt = datetime.fromisoformat(meeting_date_str)
+            else:
+                meeting_dt = datetime.fromisoformat(meeting_date_str + "T00:00:00")
+        except ValueError:
+            meeting_dt = None
+
+    request_log = RunRequestLog(
+        user_id=user_details.user.id,
+        user_auth0_sub=user_details.claims.get("sub"),
+        run_id=run_id,
+        meeting_date=meeting_dt,
+        language=language_str,
+        original_file_name=original_filename,
+        stored_file_name=stored_filename,
+    )
+    db.add(request_log)
+    await db.flush()
 
     asyncio.create_task(_run_pipeline_task(run_id, transcript_path, meeting_date_str, language_str))
 

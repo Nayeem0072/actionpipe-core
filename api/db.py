@@ -58,6 +58,18 @@ async def db_lifespan():
         await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()"))
         # Link org_people to users (when a contact has a login account)
         await conn.execute(text("ALTER TABLE org_people ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE SET NULL"))
+        # Ensure run_request_logs / run_response_logs have latest columns
+        await conn.execute(text("ALTER TABLE run_request_logs ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE SET NULL"))
+        await conn.execute(text("ALTER TABLE run_request_logs ADD COLUMN IF NOT EXISTS user_auth0_sub VARCHAR(255)"))
+        await conn.execute(text("ALTER TABLE run_request_logs ADD COLUMN IF NOT EXISTS meeting_date TIMESTAMPTZ"))
+        await conn.execute(text("ALTER TABLE run_request_logs ADD COLUMN IF NOT EXISTS language VARCHAR(64)"))
+        await conn.execute(text("ALTER TABLE run_request_logs ADD COLUMN IF NOT EXISTS original_file_name VARCHAR(512)"))
+        await conn.execute(text("ALTER TABLE run_request_logs ADD COLUMN IF NOT EXISTS stored_file_name VARCHAR(512)"))
+        await conn.execute(text("ALTER TABLE run_response_logs ADD COLUMN IF NOT EXISTS status VARCHAR(64)"))
+        await conn.execute(text("ALTER TABLE run_response_logs ADD COLUMN IF NOT EXISTS actions_extracted INTEGER"))
+        await conn.execute(text("ALTER TABLE run_response_logs ADD COLUMN IF NOT EXISTS actions_normalized INTEGER"))
+        await conn.execute(text("ALTER TABLE run_response_logs ADD COLUMN IF NOT EXISTS actions_executed INTEGER"))
+        await conn.execute(text("ALTER TABLE run_response_logs ADD COLUMN IF NOT EXISTS response_data JSONB"))
     async with async_session_factory() as session:
         await session.execute(text("SELECT 1"))
     yield

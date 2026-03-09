@@ -167,3 +167,50 @@ class OrgTeamMember(Base):
     person: Mapped["OrgPerson"] = relationship("OrgPerson", back_populates="team_memberships")
 
     __table_args__ = (UniqueConstraint("team_id", "person_id", name="uq_org_team_member"),)
+
+
+class RunRequestLog(Base):
+    """Log entry for a run request (meeting metadata and inputs)."""
+    __tablename__ = "run_request_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    user_auth0_sub: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    run_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    meeting_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    language: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    original_file_name: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    stored_file_name: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+    responses: Mapped[list["RunResponseLog"]] = relationship(
+        "RunResponseLog",
+        back_populates="request",
+        cascade="all, delete-orphan",
+    )
+
+
+class RunResponseLog(Base):
+    """Log entry for a run response (outputs and status)."""
+    __tablename__ = "run_response_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    request_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("run_request_logs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    status: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    actions_extracted: Mapped[int | None] = mapped_column(nullable=True)
+    actions_normalized: Mapped[int | None] = mapped_column(nullable=True)
+    actions_executed: Mapped[int | None] = mapped_column(nullable=True)
+    response_data: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+    request: Mapped["RunRequestLog"] = relationship("RunRequestLog", back_populates="responses")
