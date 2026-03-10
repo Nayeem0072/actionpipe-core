@@ -14,6 +14,7 @@ from api.models import OrgPerson, Organization, User
 from api.routes import runs as runs_routes
 from api.routes import network as network_routes
 from api.routes import slack as slack_routes
+from api.routes import calendar as calendar_routes
 
 # Ensure api and src loggers (pipeline, executor, etc.) output to console when running under uvicorn
 _root = logging.getLogger()
@@ -47,6 +48,7 @@ app.add_middleware(
 app.include_router(runs_routes.router)
 app.include_router(network_routes.router)
 app.include_router(slack_routes.router)
+app.include_router(calendar_routes.router)
 
 
 @app.get("/me")
