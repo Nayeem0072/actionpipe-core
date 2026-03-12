@@ -3,11 +3,12 @@ import re
 import hashlib
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from pydantic import BaseModel as PydanticBaseModel
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableConfig
 
-from .state import GraphState
+from .state import GraphState, progress_callback_var
 from .models import Segment, Action, ActionDetails
 from .llm_config import LOCAL_EXTRACTOR_CONFIG, CROSS_CHUNK_RESOLVER_CONFIG
 
@@ -189,7 +190,12 @@ def _parse_segments(result: _SegmentExtraction, chunk_index: int) -> List[Segmen
     return segments
 
 
-def _extract_single_chunk(chunk: str, chunk_index: int, relevance_score: int) -> List[Segment]:
+def _extract_single_chunk(
+    chunk: str,
+    chunk_index: int,
+    relevance_score: int,
+    config: Optional[RunnableConfig] = None,
+) -> List[Segment]:
     """
     Extract candidate segments from one chunk. Creates its own LLM instance so
     it is safe to call concurrently from multiple threads.
@@ -243,7 +249,7 @@ CRITICAL for description: Resolve "it", "that", "this", "that thing" from nearby
     best_segments: List[Segment] = []
     for attempt in range(1, _MAX_EXTRACTION_RETRIES + 2):  # 1 original + up to N retries
         try:
-            result = chain.invoke({"chunk": chunk})
+            result = chain.invoke({"chunk": chunk}, config=config)
         except Exception as e:
             logger.error(
                 "Extractor: Chunk %d attempt %d LLM call failed: %s",
@@ -317,7 +323,7 @@ def segmenter_node(state: GraphState) -> GraphState:
     for i in range(0, len(turns), chunk_size):
         chunk = "\n\n".join(turns[i:i + chunk_size])
         logger.info("Segmenter: Chunk index: %d, length: %d", i, len(chunk))
-        logger.info("Segmenter: Chunk text: %s", chunk)
+        # logger.info("Segmenter: Chunk text: %s", chunk)
         chunks.append(chunk)
 
     logger.info("Segmenter: Created %d chunks", len(chunks))
@@ -332,8 +338,8 @@ def segmenter_node(state: GraphState) -> GraphState:
         "merged_actions": [],
         "emitted_text_spans": set(),
     }
-    progress_cb = state.get("progress_callback")
-    if progress_cb and callable(progress_cb) and chunks:
+    progress_cb = progress_callback_var.get()
+    if progress_cb and chunks:
         progress_cb("progress", {
             "agent": "extractor",
             "step": "chunks",
@@ -342,7 +348,10 @@ def segmenter_node(state: GraphState) -> GraphState:
     return result
 
 
-def parallel_extractor_node(state: GraphState) -> GraphState:
+def parallel_extractor_node(
+    state: GraphState,
+    config: Optional[RunnableConfig] = None,
+) -> GraphState:
     """
     [2] PARALLEL EXTRACTOR NODE  (replaces relevance_gate + local_extractor + context_resolver)
 
@@ -375,13 +384,14 @@ def parallel_extractor_node(state: GraphState) -> GraphState:
     chunk_segment_map: Dict[int, List[Segment]] = {}
     max_workers = min(len(relevant), _MAX_PARALLEL_CHUNKS)
     total_chunks = len(relevant)
-    progress_cb = state.get("progress_callback")
+    # Read once outside the loop — ContextVar lookups are cheap but consistent
+    progress_cb = progress_callback_var.get()
 
     logger.info("ParallelExtractor: Launching %d concurrent extraction tasks", len(relevant))
     completed = 0
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_chunk = {
-            executor.submit(_extract_single_chunk, chunk, idx, score): idx
+            executor.submit(_extract_single_chunk, chunk, idx, score, config): idx
             for idx, chunk, score in relevant
         }
         for future in as_completed(future_to_chunk):
@@ -391,7 +401,7 @@ def parallel_extractor_node(state: GraphState) -> GraphState:
                 all_segments.extend(segments)
                 chunk_segment_map[idx] = segments
                 completed += 1
-                if progress_cb and callable(progress_cb):
+                if progress_cb:
                     progress_cb("progress", {
                         "agent": "extractor",
                         "step": "parallel_extractor",
@@ -612,7 +622,10 @@ def _apply_cross_chunk_resolution(
     return result
 
 
-def cross_chunk_resolver_node(state: GraphState) -> GraphState:
+def cross_chunk_resolver_node(
+    state: GraphState,
+    config: Optional[RunnableConfig] = None,
+) -> GraphState:
     """
     [4] CROSS-CHUNK RESOLVER NODE
 
@@ -691,7 +704,7 @@ Return JSON with:
     )
 
     try:
-        result = chain.invoke({"actions": actions_text})
+        result = chain.invoke({"actions": actions_text}, config=config)
         merge_groups = result.merge_groups or []
         updates = result.updates or []
         logger.info(

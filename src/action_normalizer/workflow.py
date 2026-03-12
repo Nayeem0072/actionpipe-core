@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import List, Optional
+from typing import Any, Callable, List, Optional
 
 from langgraph.graph import END, StateGraph
 
@@ -47,7 +47,7 @@ def _timed_node(fn, name: str):
     return wrapped
 
 
-def create_normalizer_graph():
+def create_normalizer_graph(checkpointer=None):
     """
     Build the Action Normalizer LangGraph workflow.
 
@@ -58,6 +58,11 @@ def create_normalizer_graph():
         → deduplicator        (rule-based similarity)
         → tool_classifier     (rule-based + optional LLM for ambiguous types)
         → END
+
+    Parameters
+    ----------
+    checkpointer:
+        Optional LangGraph checkpointer for fault-tolerant resumption.
     """
     workflow = StateGraph(NormalizerState)
 
@@ -74,8 +79,8 @@ def create_normalizer_graph():
     workflow.add_edge("deduplicator", "tool_classifier")
     workflow.add_edge("tool_classifier", END)
 
-    app = workflow.compile()
-    logger.info("Action Normalizer workflow created")
+    app = workflow.compile(checkpointer=checkpointer) if checkpointer else workflow.compile()
+    logger.info("Action Normalizer workflow created (checkpointer=%s)", type(checkpointer).__name__ if checkpointer else "none")
     return app
 
 
@@ -169,6 +174,89 @@ def normalize_actions_with_progress(
             continue
         final_state = state
         # Skip initial state (no node has run yet: working_actions still empty)
+        if node_index == 0 and not state.get("working_actions"):
+            continue
+        if node_index < len(_NORMALIZER_NODE_ORDER):
+            node_name = _NORMALIZER_NODE_ORDER[node_index]
+            progress_callback("step_done", {"agent": "normalizer", "step": node_name})
+            next_index = node_index + 1
+            if next_index < len(_NORMALIZER_NODE_ORDER):
+                next_node = _NORMALIZER_NODE_ORDER[next_index]
+                progress_callback("progress", {
+                    "agent": "normalizer",
+                    "step": next_node,
+                    "status": "running",
+                })
+            node_index += 1
+
+    if not final_state:
+        return []
+
+    normalized = final_state.get("working_actions", [])
+    return [
+        a.model_dump(mode="json") if hasattr(a, "model_dump") else a
+        for a in normalized
+    ]
+
+
+def normalize_actions_with_progress_checkpointed(
+    raw_actions: List[dict],
+    progress_callback: Callable[[str, dict], Any],
+    *,
+    meeting_date: Optional[str] = None,
+    checkpointer: Optional[Any] = None,
+    thread_id: Optional[str] = None,
+    callbacks: Optional[list] = None,
+) -> List[dict]:
+    """Checkpointer-aware variant of :func:`normalize_actions_with_progress`.
+
+    When *checkpointer* and *thread_id* are provided the graph persists state
+    between nodes so a crashed worker can resume from the last completed node.
+
+    Parameters
+    ----------
+    raw_actions:
+        List of action dicts from the extractor.
+    progress_callback:
+        ``Callable(event_type, data)`` for SSE progress events.
+    meeting_date:
+        ISO 8601 date string for deadline resolution.
+    checkpointer:
+        Optional LangGraph checkpointer.
+    thread_id:
+        Stable thread identifier for this run + agent step.
+    callbacks:
+        Optional list of LangChain callback handlers.
+    """
+    if not raw_actions:
+        logger.info("NormalizerWorkflow: No actions to normalise")
+        return []
+
+    app = create_normalizer_graph(checkpointer=checkpointer)
+    initial_state: NormalizerState = {
+        "raw_actions": raw_actions,
+        "working_actions": [],
+        "meeting_date": meeting_date,
+    }
+
+    run_config: dict[str, Any] = {}
+    if checkpointer and thread_id:
+        run_config["configurable"] = {"thread_id": thread_id}
+    if callbacks:
+        run_config["callbacks"] = callbacks
+
+    stream_mode = "values"
+    try:
+        stream = app.stream(initial_state, config=run_config or None, stream_mode=stream_mode)
+    except TypeError:
+        stream = app.stream(initial_state, config=run_config or None)
+
+    final_state = None
+    node_index = 0
+    for state in stream:
+        if not isinstance(state, dict):
+            continue
+        final_state = state
         if node_index == 0 and not state.get("working_actions"):
             continue
         if node_index < len(_NORMALIZER_NODE_ORDER):

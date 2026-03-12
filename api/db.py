@@ -1,11 +1,17 @@
-"""Database connection for FastAPI — async SQLAlchemy + asyncpg."""
+"""Database connection for FastAPI — async SQLAlchemy + asyncpg.
+
+Also exposes a sync session factory for Celery workers, which run in plain
+threads and cannot use asyncpg / async SQLAlchemy.
+"""
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 import os
+from typing import Generator
 
 from dotenv import load_dotenv
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from api.models import Base
 
@@ -15,6 +21,12 @@ load_dotenv()
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql+asyncpg://myuser:mypassword@localhost:5432/agentdb",
+)
+
+# Sync URL for Celery workers (psycopg2, no asyncpg)
+SYNC_DATABASE_URL = os.getenv(
+    "SYNC_DATABASE_URL",
+    "postgresql://myuser:mypassword@localhost:5432/agentdb",
 )
 
 engine = create_async_engine(
@@ -32,6 +44,37 @@ async_session_factory = async_sessionmaker(
     autocommit=False,
     autoflush=False,
 )
+
+# Sync engine / session factory used by Celery workers
+sync_engine = create_engine(
+    SYNC_DATABASE_URL,
+    echo=os.getenv("SQL_ECHO", "0").lower() in ("1", "true", "yes"),
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+)
+
+sync_session_factory = sessionmaker(
+    sync_engine,
+    class_=Session,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
+)
+
+
+@contextmanager
+def get_sync_db() -> Generator[Session, None, None]:
+    """Context manager that yields a sync session for Celery workers."""
+    session = sync_session_factory()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

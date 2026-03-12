@@ -3,13 +3,19 @@ Runs API: create pipeline runs (upload + details) and stream progress via SSE.
 
   POST /runs       — Create run (multipart: file, meetingDate, language), return runId + streamUrl.
   GET  /runs/{id}/stream — SSE stream for extractor → normalizer → executor progress.
+
+Pipeline execution is offloaded to Celery workers. Progress events are published
+to a Redis Pub/Sub channel (``run:{run_id}:events``) and forwarded to SSE clients.
 """
 import asyncio
+import json
+import os
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, AsyncGenerator
 
+import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.requests import Request
 from fastapi.responses import StreamingResponse
@@ -18,17 +24,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth import UserDetails, get_user_details
 from api.db import async_session_factory, get_db
-from api.models import RunRequestLog, RunResponseLog
-from api.pipeline import run_pipeline_sync
+from api.models import AgentRunTask, RunRequestLog, RunResponseLog
 
 MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024  # 15 MB
 ALLOWED_EXTENSIONS = {".csv", ".txt", ".doc", ".pdf"}
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "uploads"
 
-router = APIRouter(prefix="/runs", tags=["runs"])
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+CELERY_MAX_RETRIES = int(os.getenv("CELERY_MAX_RETRIES", "3"))
 
-# In-memory run store: run_id -> { "queue": asyncio.Queue, "status": "pending"|"running"|"completed"|"error" }
-_runs: dict[str, dict[str, Any]] = {}
+router = APIRouter(prefix="/runs", tags=["runs"])
 
 
 def _ensure_upload_dir() -> Path:
@@ -37,8 +42,7 @@ def _ensure_upload_dir() -> Path:
 
 
 def _sse_message(event_type: str | None, data: dict) -> str:
-    """Format one SSE message (event type optional, data as JSON line)."""
-    import json
+    """Format one SSE frame."""
     lines = []
     if event_type is not None:
         lines.append(f"event: {event_type}")
@@ -72,41 +76,27 @@ async def _log_run_response(run_id: str, event_type: str, data: dict) -> None:
             await session.rollback()
 
 
-async def _run_pipeline_task(run_id: str, transcript_path: str, meeting_date: str | None, language: str | None) -> None:
-    """Run pipeline in thread and push events to the run's queue."""
-    run_state = _runs.get(run_id)
-    if not run_state:
-        return
-    queue: asyncio.Queue = run_state["queue"]
-    loop = asyncio.get_event_loop()
+async def _create_agent_run_tasks(db: AsyncSession, run_id: str, user_id: uuid.UUID | None) -> None:
+    """Pre-create AgentRunTask rows for all three agent steps in pending state."""
+    from api.models import AgentRunTask
 
-    def put_event(event_type: str, data: dict) -> None:
-        # Queue SSE event
-        loop.call_soon_threadsafe(queue.put_nowait, {"event": event_type, "data": data})
-        # Persist final summary or error when available
-        if event_type in ("run_complete", "error"):
-            def _schedule_log() -> None:
-                asyncio.create_task(_log_run_response(run_id, event_type, data))
-            loop.call_soon_threadsafe(_schedule_log)
-
-    def run_in_thread() -> None:
-        run_pipeline_sync(
-            transcript_path,
-            meeting_date,
-            language,
-            put_event,
-            dry_run=True,
-            contacts_path=None,
+    for agent_type in ("extractor", "normalizer", "executor"):
+        task = AgentRunTask(
+            run_id=run_id,
+            user_id=user_id,
+            agent_type=agent_type,
+            checkpoint_thread_id=f"{run_id}:{agent_type}",
+            status="pending",
+            attempt_count=0,
+            max_attempts=CELERY_MAX_RETRIES,
         )
-        # Signal stream consumer that run is finished (no more events)
-        loop.call_soon_threadsafe(queue.put_nowait, None)
-
-    run_state["status"] = "running"
-    await asyncio.get_event_loop().run_in_executor(None, run_in_thread)
-    run_state["status"] = "completed"
+        db.add(task)
+    await db.flush()
 
 
-# --- POST /runs (multipart or JSON) ---
+# ---------------------------------------------------------------------------
+# POST /runs
+# ---------------------------------------------------------------------------
 
 
 @router.post("", status_code=201)
@@ -120,7 +110,7 @@ async def create_run(
 ) -> dict:
     """
     Create a new pipeline run: upload a meeting transcript (or pass by reference),
-    start processing asynchronously, and return an id to subscribe to for SSE progress.
+    start processing via Celery workers, and return an id to subscribe to for SSE.
 
     Multipart: file (required if not using JSON), meetingDate (e.g. YYYY-MM-DD), language (e.g. en, bn).
     JSON: fileRef (path or id), meetingDate, language.
@@ -139,7 +129,6 @@ async def create_run(
             raise HTTPException(status_code=400, detail="fileRef required when using application/json")
         meeting_date_str = body.get("meetingDate") or meeting_date_str
         language_str = body.get("language") or language_str
-        # fileRef can be an absolute path or a stored filename under uploads/
         p = Path(ref)
         if p.is_absolute() and p.exists():
             transcript_path = str(p)
@@ -174,14 +163,11 @@ async def create_run(
         stored_filename = safe_name
 
     run_id = uuid.uuid4().hex
-    queue: asyncio.Queue = asyncio.Queue()
-    _runs[run_id] = {"queue": queue, "status": "pending"}
 
     # Persist run request log
     meeting_dt = None
     if meeting_date_str:
         try:
-            # Support both date-only (YYYY-MM-DD) and full ISO datetime strings
             if "T" in meeting_date_str:
                 meeting_dt = datetime.fromisoformat(meeting_date_str)
             else:
@@ -199,9 +185,25 @@ async def create_run(
         stored_file_name=stored_filename,
     )
     db.add(request_log)
-    await db.flush()
 
-    asyncio.create_task(_run_pipeline_task(run_id, transcript_path, meeting_date_str, language_str))
+    # Pre-create the three AgentRunTask tracking rows
+    await _create_agent_run_tasks(db, run_id, user_details.user.id)
+    await db.commit()
+
+    # Dispatch the extractor Celery task — it will chain normalizer → executor on success
+    from worker.tasks import run_extractor_task
+
+    run_extractor_task.apply_async(
+        args=[
+            run_id,
+            str(user_details.user.id),
+            transcript_path,
+            meeting_date_str,
+            language_str,
+            True,  # dry_run
+        ],
+        queue="extractor",
+    )
 
     return {
         "runId": run_id,
@@ -209,7 +211,10 @@ async def create_run(
     }
 
 
-# --- GET /runs/:runId/stream (SSE) ---
+# ---------------------------------------------------------------------------
+# GET /runs/:runId/stream  (SSE via Redis Pub/Sub)
+# ---------------------------------------------------------------------------
+
 
 @router.get("/{run_id}/stream")
 async def stream_run(
@@ -219,30 +224,56 @@ async def stream_run(
     """
     Real-time progress for the pipeline (extractor → normalizer → executor).
     Connect with Accept: text/event-stream.
+
+    Events are published to Redis Pub/Sub by the Celery workers and forwarded
+    here as SSE frames.  The stream closes when a ``run_complete`` or ``error``
+    event arrives, or after a 5-minute timeout.
     """
-    run_state = _runs.get(run_id)
-    if not run_state:
-        raise HTTPException(status_code=404, detail="Run not found")
 
-    queue: asyncio.Queue = run_state["queue"]
+    async def event_generator() -> AsyncGenerator[str, None]:
+        redis_client = aioredis.from_url(REDIS_URL, decode_responses=True)
+        pubsub = redis_client.pubsub()
+        channel = f"run:{run_id}:events"
+        await pubsub.subscribe(channel)
 
-    async def event_generator():
         try:
-            while True:
-                try:
-                    item = await asyncio.wait_for(queue.get(), timeout=300.0)
-                except asyncio.TimeoutError:
-                    yield _sse_message("progress", {"agent": None, "step": "waiting", "status": "running"})
-                    await asyncio.sleep(0)
-                    continue
-                if item is None:
+            deadline = asyncio.get_event_loop().time() + 300  # 5-minute overall timeout
+
+            async for raw_message in pubsub.listen():
+                if asyncio.get_event_loop().time() > deadline:
+                    yield _sse_message("progress", {"agent": None, "step": "timeout", "status": "error"})
                     break
-                event_type = item.get("event")
-                data = item.get("data", {})
+
+                if raw_message["type"] != "message":
+                    continue
+
+                try:
+                    parsed = json.loads(raw_message["data"])
+                except (json.JSONDecodeError, TypeError):
+                    continue
+
+                event_type: str = parsed.get("event", "")
+                data: dict = parsed.get("data", {})
+
+                # Internal signal to close the stream — not forwarded to the client
+                if event_type == "__stream_end__":
+                    break
+
                 yield _sse_message(event_type, data)
+
+                # Persist final summary / error to the DB
+                if event_type in ("run_complete", "error"):
+                    asyncio.create_task(_log_run_response(run_id, event_type, data))
+                    # Give the client the final frame then close
+                    if event_type == "run_complete":
+                        break
+
                 await asyncio.sleep(0)
+
         finally:
-            pass
+            await pubsub.unsubscribe(channel)
+            await pubsub.close()
+            await redis_client.aclose()
 
     return StreamingResponse(
         event_generator(),

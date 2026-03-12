@@ -16,6 +16,17 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: agent-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   api:
     build: .
     container_name: agent-api
@@ -25,14 +36,36 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
-      # Optional: for future DB connection
-      # DATABASE_URL: postgresql://agent:agent@postgres:5432/agentdb
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_USER: agent
       POSTGRES_PASSWORD: agent
       POSTGRES_DB: agentdb
+      DATABASE_URL: postgresql+asyncpg://agent:agent@postgres:5432/agentdb
+      SYNC_DATABASE_URL: postgresql://agent:agent@postgres:5432/agentdb
+      REDIS_URL: redis://redis:6379/0
+
+  worker:
+    build: .
+    container_name: agent-worker
+    command: celery -A worker.celery_app worker --concurrency=4 -Q extractor,normalizer,executor --loglevel=info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agent
+      POSTGRES_DB: agentdb
+      DATABASE_URL: postgresql+asyncpg://agent:agent@postgres:5432/agentdb
+      SYNC_DATABASE_URL: postgresql://agent:agent@postgres:5432/agentdb
+      REDIS_URL: redis://redis:6379/0
 
 volumes:
   postgres_data:

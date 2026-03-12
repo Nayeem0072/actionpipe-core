@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -215,3 +215,89 @@ class RunResponseLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
     request: Mapped["RunRequestLog"] = relationship("RunRequestLog", back_populates="responses")
+
+
+class AgentRunTask(Base):
+    """Tracks each agent step (extractor/normalizer/executor) for a run.
+
+    attempt_count is incremented each time a worker picks up the task. When it
+    reaches max_attempts the status is set to permanently_failed and no further
+    retries are attempted — even if the Celery task has retries remaining.
+    The checkpoint_thread_id is stable across retries so LangGraph always resumes
+    from the last completed node rather than starting over.
+    """
+    __tablename__ = "agent_run_tasks"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    # extractor | normalizer | executor
+    agent_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    celery_task_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Stable key used with PostgresSaver: "{run_id}:{agent_type}"
+    checkpoint_thread_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    # pending | running | completed | failed | permanently_failed
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    __table_args__ = (UniqueConstraint("run_id", "agent_type", name="uq_agent_run_task"),)
+
+
+class TokenUsage(Base):
+    """Per-agent token consumption record for a single run."""
+    __tablename__ = "token_usage"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    run_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    # extractor | normalizer | executor
+    agent_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    provider: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    model: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    prompt_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    completion_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+
+class TokenLimit(Base):
+    """Hard token budget per user (or global default) per period.
+
+    If user_id is NULL the row is the global default applied to all users.
+    If agent_type is NULL the limit applies to the combined total across all agents.
+    A more specific row (non-null user_id or agent_type) takes precedence.
+    """
+    __tablename__ = "token_limits"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    # extractor | normalizer | executor | NULL (all agents combined)
+    agent_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # daily | monthly
+    period: Mapped[str] = mapped_column(String(16), nullable=False, default="daily")
+    max_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow
+    )

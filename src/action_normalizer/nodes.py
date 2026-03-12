@@ -16,6 +16,7 @@ from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
 
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel as PydanticBaseModel
 
 from .data import (
@@ -456,7 +457,10 @@ class _VerbEnrichmentResult(PydanticBaseModel):
     verbs: List[str]
 
 
-def verb_enricher_node(state: NormalizerState) -> NormalizerState:
+def verb_enricher_node(
+    state: NormalizerState,
+    config: Optional[RunnableConfig] = None,
+) -> NormalizerState:
     """
     Extract meaningful verbs from descriptions and apply the upgrade dictionary.
 
@@ -504,7 +508,7 @@ def verb_enricher_node(state: NormalizerState) -> NormalizerState:
             )
             chain = prompt | structured_llm
             desc_text = "\n".join(f"{i + 1}. {d}" for i, d in enumerate(descriptions))
-            result = chain.invoke({"descriptions": desc_text})
+            result = chain.invoke({"descriptions": desc_text}, config=config)
 
             if result.verbs and len(result.verbs) == len(llm_indices):
                 for orig_idx, llm_verb in zip(llm_indices, result.verbs):
@@ -531,7 +535,10 @@ class _SplitDecision(PydanticBaseModel):
     splits: List[str]
 
 
-def _llm_split_action(action: NormalizedAction) -> List[NormalizedAction]:
+def _llm_split_action(
+    action: NormalizedAction,
+    config: Optional[RunnableConfig] = None,
+) -> List[NormalizedAction]:
     """
     Ask the LLM whether an action should be split and, if so, return the atomic pieces.
 
@@ -571,7 +578,8 @@ def _llm_split_action(action: NormalizedAction) -> List[NormalizedAction]:
             {
                 "description": action.description,
                 "assignee": action.assignee or "unknown",
-            }
+            },
+            config=config,
         )
 
         if result.should_split and len(result.splits) >= 2:
@@ -621,7 +629,10 @@ def _llm_split_action(action: NormalizedAction) -> List[NormalizedAction]:
     return [action]
 
 
-def action_splitter_node(state: NormalizerState) -> NormalizerState:
+def action_splitter_node(
+    state: NormalizerState,
+    config: Optional[RunnableConfig] = None,
+) -> NormalizerState:
     """
     Detect and split compound action descriptions into atomic, tool-executable actions.
 
@@ -636,7 +647,7 @@ def action_splitter_node(state: NormalizerState) -> NormalizerState:
             logger.info(
                 "ActionSplitter: Compound candidate: %r", action.description[:70]
             )
-            result.extend(_llm_split_action(action))
+            result.extend(_llm_split_action(action, config=config))
         else:
             result.append(action)
 
@@ -728,7 +739,10 @@ _LLM_TOOL_TYPE_MAP: dict[str, ToolType] = {
 }
 
 
-def tool_classifier_node(state: NormalizerState) -> NormalizerState:
+def tool_classifier_node(
+    state: NormalizerState,
+    config: Optional[RunnableConfig] = None,
+) -> NormalizerState:
     """
     Classify each action into a ToolType and extract tool-specific parameters.
 
@@ -777,7 +791,7 @@ def tool_classifier_node(state: NormalizerState) -> NormalizerState:
                 f"{k + 1}. [{updated[i].verb}] {updated[i].description}"
                 for k, i in enumerate(llm_indices)
             )
-            result = chain.invoke({"actions": actions_text})
+            result = chain.invoke({"actions": actions_text}, config=config)
 
             if result.tool_types and len(result.tool_types) == len(llm_indices):
                 for orig_idx, type_str in zip(llm_indices, result.tool_types):
