@@ -6,3 +6,4 @@ venv/
 *.egg-info/
 upload/
 uploads/
+.DS_Store

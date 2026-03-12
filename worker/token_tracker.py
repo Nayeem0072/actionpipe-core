@@ -212,7 +212,7 @@ def check_token_limit(
     uid = str(user_id)
 
     for period in ("daily", "monthly"):
-        limit_tokens = _resolve_limit(db, uid, agent_type, period)
+        limit_tokens, applies_to_all_agents = _resolve_limit(db, uid, agent_type, period)
         if limit_tokens == 0:
             continue
 
@@ -228,7 +228,7 @@ def check_token_limit(
             .where(TokenUsage.user_id == uuid.UUID(uid) if isinstance(uid, str) else user_id)
             .where(TokenUsage.created_at >= period_start)
         )
-        if agent_type:
+        if agent_type and not applies_to_all_agents:
             used_q = used_q.where(TokenUsage.agent_type == agent_type)
 
         used: int = db.execute(used_q).scalar() or 0
@@ -237,15 +237,16 @@ def check_token_limit(
             raise TokenLimitExceeded(uid, period, used, limit_tokens)
 
 
-def _resolve_limit(db: Any, user_id: str, agent_type: str, period: str) -> int:
-    """Return the effective token limit for user + agent_type + period.
+def _resolve_limit(db: Any, user_id: str, agent_type: str, period: str) -> tuple[int, bool]:
+    """Return the effective token limit and whether it spans all agents.
 
     Priority (highest to lowest):
       1. user_id + agent_type
       2. user_id + NULL agent_type
       3. NULL user_id + agent_type  (global per-agent default)
       4. NULL user_id + NULL agent_type  (global default)
-    Falls back to env defaults if no DB row exists.
+    Falls back to env defaults if no DB row exists. Env defaults preserve the
+    previous per-agent behavior because they are not explicitly scoped.
     """
     from sqlalchemy import select
 
@@ -278,9 +279,10 @@ def _resolve_limit(db: Any, user_id: str, agent_type: str, period: str) -> int:
     ]
     if not matching:
         # No DB row — use env defaults
-        return _DEFAULT_DAILY_LIMIT if period == "daily" else _DEFAULT_MONTHLY_LIMIT
+        return (_DEFAULT_DAILY_LIMIT if period == "daily" else _DEFAULT_MONTHLY_LIMIT, False)
 
-    return max(matching, key=specificity).max_tokens
+    resolved = max(matching, key=specificity)
+    return resolved.max_tokens, resolved.agent_type is None
 
 
 # ---------------------------------------------------------------------------

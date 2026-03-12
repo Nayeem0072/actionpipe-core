@@ -12,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.db import get_db
-from api.models import Organization, User, OrgPerson
+from api.models import Organization, OrgPerson, TokenLimit, User
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +56,7 @@ SHARED_ORG_NAME = os.getenv("SHARED_ORG_NAME", "Development")
 # Development: avoid calling Auth0 /userinfo on every request.
 # When True, we never call /userinfo; we just trust whatever is in the JWT.
 DISABLE_AUTH0_USERINFO = os.getenv("DISABLE_AUTH0_USERINFO", "1").lower() in ("1", "true", "yes")
+INITIAL_MONTHLY_TOKEN_LIMIT = int(os.getenv("INITIAL_MONTHLY_TOKEN_LIMIT", "100000"))
 
 # In-memory cache of JWKS (key by kid)
 _jwks_cache: dict[str, dict] = {}
@@ -169,6 +170,29 @@ async def _fetch_auth0_userinfo(access_token: str, sub: str | None) -> dict | No
         return None
 
 
+async def _ensure_initial_token_limit(db: AsyncSession, user: User) -> None:
+    """Create the default monthly token quota for first-time users."""
+    result = await db.execute(
+        select(TokenLimit)
+        .where(TokenLimit.user_id == user.id)
+        .where(TokenLimit.agent_type.is_(None))
+        .where(TokenLimit.period == "monthly")
+    )
+    existing_limit = result.scalars().first()
+    if existing_limit is not None:
+        return
+
+    db.add(
+        TokenLimit(
+            user_id=user.id,
+            agent_type=None,
+            period="monthly",
+            max_tokens=INITIAL_MONTHLY_TOKEN_LIMIT,
+        )
+    )
+    await db.flush()
+
+
 async def get_or_create_user(db: AsyncSession, payload: dict) -> User:
     """
     Find user by auth0_id (sub); if not found, create Organization and User.
@@ -250,6 +274,7 @@ async def get_or_create_user(db: AsyncSession, payload: dict) -> User:
     )
     db.add(user)
     await db.flush()
+    await _ensure_initial_token_limit(db, user)
     await db.refresh(user)
     logger.info("Created user from Auth0: auth0_id=%s email=%s org_id=%s", sub, email, org.id)
     await _link_user_to_org_person(db, user, email)

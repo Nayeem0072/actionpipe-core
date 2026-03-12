@@ -23,8 +23,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth import UserDetails, get_user_details
-from api.db import async_session_factory, get_db
-from api.models import AgentRunTask, RunRequestLog, RunResponseLog
+from api.db import get_db
+from api.models import AgentRunTask, RunRequestLog
 
 MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024  # 15 MB
 ALLOWED_EXTENSIONS = {".csv", ".txt", ".doc", ".pdf"}
@@ -48,32 +48,6 @@ def _sse_message(event_type: str | None, data: dict) -> str:
         lines.append(f"event: {event_type}")
     lines.append(f"data: {json.dumps(data)}")
     return "\n".join(lines) + "\n\n"
-
-
-async def _log_run_response(run_id: str, event_type: str, data: dict) -> None:
-    """Persist a run response log for the given run_id."""
-    async with async_session_factory() as session:
-        try:
-            result = await session.execute(
-                select(RunRequestLog).where(RunRequestLog.run_id == run_id)
-            )
-            request_log = result.scalars().first()
-            if not request_log:
-                return
-            summary: dict[str, Any] = data.get("summary") or {}
-            status = "completed" if event_type == "run_complete" else data.get("status") or event_type
-            response_log = RunResponseLog(
-                request_id=request_log.id,
-                status=status,
-                actions_extracted=summary.get("actions_extracted"),
-                actions_normalized=summary.get("actions_normalized"),
-                actions_executed=summary.get("actions_executed"),
-                response_data=data,
-            )
-            session.add(response_log)
-            await session.commit()
-        except Exception:
-            await session.rollback()
 
 
 async def _create_agent_run_tasks(db: AsyncSession, run_id: str, user_id: uuid.UUID | None) -> None:
@@ -261,9 +235,7 @@ async def stream_run(
 
                 yield _sse_message(event_type, data)
 
-                # Persist final summary / error to the DB
                 if event_type in ("run_complete", "error"):
-                    asyncio.create_task(_log_run_response(run_id, event_type, data))
                     # Give the client the final frame then close
                     if event_type == "run_complete":
                         break

@@ -13,7 +13,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from api.models import Base
+from api.models import Base, TokenLimit
 
 load_dotenv()
 
@@ -28,6 +28,7 @@ SYNC_DATABASE_URL = os.getenv(
     "SYNC_DATABASE_URL",
     "postgresql://myuser:mypassword@localhost:5432/agentdb",
 )
+INITIAL_MONTHLY_TOKEN_LIMIT = int(os.getenv("INITIAL_MONTHLY_TOKEN_LIMIT", "100000"))
 
 engine = create_async_engine(
     DATABASE_URL,
@@ -90,6 +91,44 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
+async def _backfill_initial_monthly_token_limits() -> None:
+    """Grant the default monthly quota to existing users that do not have one."""
+    async with async_session_factory() as session:
+        users_missing_limit = (
+            await session.execute(
+                text(
+                    """
+                    SELECT u.id
+                    FROM users u
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM token_limits tl
+                        WHERE tl.user_id = u.id
+                          AND tl.agent_type IS NULL
+                          AND tl.period = 'monthly'
+                    )
+                    """
+                )
+            )
+        ).scalars().all()
+
+        if not users_missing_limit:
+            return
+
+        session.add_all(
+            [
+                TokenLimit(
+                    user_id=user_id,
+                    agent_type=None,
+                    period="monthly",
+                    max_tokens=INITIAL_MONTHLY_TOKEN_LIMIT,
+                )
+                for user_id in users_missing_limit
+            ]
+        )
+        await session.commit()
+
+
 @asynccontextmanager
 async def db_lifespan():
     """Lifespan context: create tables, verify connection, dispose engine on shutdown."""
@@ -115,6 +154,7 @@ async def db_lifespan():
         await conn.execute(text("ALTER TABLE run_response_logs ADD COLUMN IF NOT EXISTS response_data JSONB"))
         # user_tokens: extra metadata per service (e.g. Slack workspace name, user id)
         await conn.execute(text("ALTER TABLE user_tokens ADD COLUMN IF NOT EXISTS meta JSONB"))
+    await _backfill_initial_monthly_token_limits()
     async with async_session_factory() as session:
         await session.execute(text("SELECT 1"))
     yield

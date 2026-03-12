@@ -17,6 +17,7 @@ from api.routes import slack as slack_routes
 from api.routes import calendar as calendar_routes
 from api.routes import jira as jira_routes
 from api.routes import notion as notion_routes
+from api.routes import dashboard as dashboard_routes
 
 # Ensure api and src loggers (pipeline, executor, etc.) output to console when running under uvicorn
 _root = logging.getLogger()
@@ -53,6 +54,7 @@ app.include_router(slack_routes.router)
 app.include_router(calendar_routes.router)
 app.include_router(jira_routes.router)
 app.include_router(notion_routes.router)
+app.include_router(dashboard_routes.router)
 
 
 @app.get("/me")

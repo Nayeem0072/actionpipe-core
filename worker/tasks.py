@@ -119,6 +119,42 @@ def _update_agent_task(db, row, **kwargs) -> None:
     db.commit()
 
 
+def _persist_run_response(db, run_id: str, event_type: str, data: dict) -> None:
+    """Persist the terminal run summary independently of SSE subscribers."""
+    from sqlalchemy import select
+
+    from api.models import RunRequestLog, RunResponseLog
+
+    request_log = db.execute(
+        select(RunRequestLog).where(RunRequestLog.run_id == run_id)
+    ).scalars().first()
+    if request_log is None:
+        logger.warning("Could not persist run response; missing request log for run=%s", run_id)
+        return
+
+    summary: dict[str, Any] = data.get("summary") or {}
+    status = "completed" if event_type == "run_complete" else data.get("status") or event_type
+    response_log = db.execute(
+        select(RunResponseLog)
+        .where(RunResponseLog.request_id == request_log.id)
+        .where(RunResponseLog.status == status)
+        .order_by(RunResponseLog.created_at.desc())
+    ).scalars().first()
+
+    if response_log is None:
+        response_log = RunResponseLog(
+            request_id=request_log.id,
+            status=status,
+        )
+        db.add(response_log)
+
+    response_log.actions_extracted = summary.get("actions_extracted")
+    response_log.actions_normalized = summary.get("actions_normalized")
+    response_log.actions_executed = summary.get("actions_executed")
+    response_log.response_data = data
+    db.commit()
+
+
 # ---------------------------------------------------------------------------
 # Shared task pre/post logic
 # ---------------------------------------------------------------------------
@@ -302,7 +338,7 @@ def run_extractor_task(
 
     # Chain to normalizer
     run_normalizer_task.apply_async(
-        args=[run_id, user_id, actions, meeting_date, language, dry_run],
+        args=[run_id, user_id, actions, len(actions), meeting_date, language, dry_run],
         queue="normalizer",
     )
     return {"run_id": run_id, "actions_count": len(actions)}
@@ -324,6 +360,7 @@ def run_normalizer_task(
     run_id: str,
     user_id: str | None,
     actions: list,
+    extracted_count: int = 0,
     meeting_date: str | None = None,
     language: str | None = None,
     dry_run: bool = True,
@@ -401,7 +438,7 @@ def run_normalizer_task(
     _publish_event(run_id, "agent_done", {"agent": agent_type})
 
     run_executor_task.apply_async(
-        args=[run_id, user_id, normalized, dry_run],
+        args=[run_id, user_id, normalized, extracted_count, len(normalized), dry_run],
         queue="executor",
     )
     return {"run_id": run_id, "normalized_count": len(normalized)}
@@ -423,6 +460,8 @@ def run_executor_task(
     run_id: str,
     user_id: str | None,
     normalized: list,
+    extracted_count: int = 0,
+    normalized_count: int = 0,
     dry_run: bool = True,
 ) -> dict:
     """Dispatch normalised actions to MCP tools (dry-run or live).
@@ -497,18 +536,21 @@ def run_executor_task(
             _task_success(db, row, callback, user_id)
 
     _publish_event(run_id, "agent_done", {"agent": agent_type})
+    run_complete_payload = {
+        "summary": {
+            "actions_extracted": extracted_count,
+            "actions_normalized": normalized_count or len(normalized),
+            "actions_executed": len(results),
+        },
+        "executor_actions": results,
+    }
     _publish_event(
         run_id,
         "run_complete",
-        {
-            "summary": {
-                "actions_extracted": None,   # extractor count not available here
-                "actions_normalized": len(normalized),
-                "actions_executed": len(results),
-            },
-            "executor_actions": results,
-        },
+        run_complete_payload,
     )
+    with get_sync_db() as db:
+        _persist_run_response(db, run_id, "run_complete", run_complete_payload)
     # Signal end of stream
     _publish_event(run_id, "__stream_end__", {})
 
