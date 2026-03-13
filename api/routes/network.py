@@ -6,6 +6,7 @@ Network API: manage org people, teams, and team members (contacts graph).
   Members: GET/POST /network/teams/{team_id}/members, DELETE /network/teams/{team_id}/members/{person_id}
   Graph:   GET /network/contacts — full contacts.json shape for the org
 """
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,7 +17,7 @@ from typing import Annotated
 
 from api.auth import get_current_user
 from api.db import get_db
-from api.models import User, OrgPerson, OrgTeam, OrgTeamMember
+from api.models import User, OrgPerson, OrgTeam, OrgTeamMember, OrgContact
 from api.schemas.network import (
     PersonCreate,
     PersonUpdate,
@@ -80,6 +81,37 @@ def build_contacts_graph(people: list[OrgPerson], teams: list[OrgTeam], members:
     return {"people": people_out}
 
 
+async def sync_org_contacts(
+    db: AsyncSession,
+    org_id: UUID,
+    *,
+    graph: dict | None = None,
+) -> None:
+    """
+    Rebuild the contacts graph from org_people, org_teams, org_team_members
+    and upsert it into org_contacts so the table stays in sync.
+    If graph is provided, use it instead of loading from DB.
+    """
+    if graph is None:
+        people_result = await db.execute(select(OrgPerson).where(OrgPerson.org_id == org_id))
+        people = list(people_result.scalars().all())
+        teams_result = await db.execute(select(OrgTeam).where(OrgTeam.org_id == org_id))
+        teams = list(teams_result.scalars().all())
+        members_result = await db.execute(
+            select(OrgTeamMember).where(OrgTeamMember.team_id.in_([t.id for t in teams]))
+        )
+        members = list(members_result.scalars().all())
+        graph = build_contacts_graph(people, teams, members)
+    existing = await db.execute(select(OrgContact).where(OrgContact.org_id == org_id))
+    row = existing.scalars().first()
+    if row:
+        row.contacts = graph
+        row.updated_at = datetime.now(timezone.utc)
+    else:
+        db.add(OrgContact(org_id=org_id, contacts=graph))
+    await db.flush()
+
+
 # --- People ---
 
 
@@ -103,6 +135,7 @@ async def create_person(
     db.add(person)
     await db.flush()
     await db.refresh(person)
+    await sync_org_contacts(db, user.org_id)
     return person
 
 
@@ -176,6 +209,7 @@ async def update_person(
         setattr(person, k, v)
     await db.flush()
     await db.refresh(person)
+    await sync_org_contacts(db, user.org_id)
     return person
 
 
@@ -193,6 +227,7 @@ async def delete_person(
     if not person:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Person not found")
     await db.delete(person)
+    await sync_org_contacts(db, user.org_id)
     return None
 
 
@@ -218,6 +253,7 @@ async def create_team(
     db.add(team)
     await db.flush()
     await db.refresh(team)
+    await sync_org_contacts(db, user.org_id)
     return team
 
 
@@ -281,6 +317,7 @@ async def update_team(
         setattr(team, k, v)
     await db.flush()
     await db.refresh(team)
+    await sync_org_contacts(db, user.org_id)
     return team
 
 
@@ -298,6 +335,7 @@ async def delete_team(
     if not team:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
     await db.delete(team)
+    await sync_org_contacts(db, user.org_id)
     return None
 
 
@@ -358,6 +396,7 @@ async def add_team_member(
     db.add(member)
     await db.flush()
     await db.refresh(member)
+    await sync_org_contacts(db, user.org_id)
     return member
 
 
@@ -384,6 +423,7 @@ async def remove_team_member(
     if not team_result.scalars().first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
     await db.delete(member)
+    await sync_org_contacts(db, user.org_id)
     return None
 
 
@@ -409,4 +449,6 @@ async def get_contacts(
         )
     )
     members = list(members_result.scalars().all())
-    return build_contacts_graph(people, teams, members)
+    graph = build_contacts_graph(people, teams, members)
+    await sync_org_contacts(db, user.org_id, graph=graph)
+    return graph
