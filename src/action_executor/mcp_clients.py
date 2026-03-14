@@ -85,6 +85,19 @@ def _validate_and_map_slack_params(params: dict[str, Any]) -> tuple[dict[str, An
     return ({"channel_id": channel_id, "text": text}, None)
 
 
+def _slack_result_params(mapped_params: dict[str, Any], original_params: dict[str, Any]) -> dict[str, Any]:
+    """
+    Build params for the API response so the frontend gets display fields.
+    MCP is only called with channel_id + text; we merge back recipient_display_name,
+    recipient, channel, message_hint for display.
+    """
+    out = dict(mapped_params)
+    for key in ("recipient_display_name", "recipient", "channel", "message_hint"):
+        if original_params.get(key) is not None:
+            out[key] = original_params[key]
+    return out
+
+
 class MCPDispatcher:
     """
     Routes each enriched action to the correct MCP server tool.
@@ -189,19 +202,25 @@ class MCPDispatcher:
         params_to_use, sandbox_err = self._sandbox_params(
             server_name, mcp_tool_name, params
         )
+        result_params = (
+            _slack_result_params(params_to_use, params)
+            if server_name == "slack" and mcp_tool_name == "slack_post_message"
+            else params_to_use
+        )
         if sandbox_err:
             return self._result(
-                action_id, tool_type, server_name, mcp_tool_name, params_to_use,
+                action_id, tool_type, server_name, mcp_tool_name, result_params,
                 status="error", response=None, error=sandbox_err,
             )
 
         if self.dry_run:
             return self._dry_run_result(
-                action_id, tool_type, server_name, mcp_tool_name, params_to_use
+                action_id, tool_type, server_name, mcp_tool_name, result_params
             )
 
         return await self._live_dispatch(
-            action_id, tool_type, server_name, server_cfg, mcp_tool_name, params_to_use
+            action_id, tool_type, server_name, server_cfg, mcp_tool_name,
+            params_to_use, result_params=result_params,
         )
 
     def _dispatch_one_dry(self, action: dict[str, Any]) -> dict[str, Any]:
@@ -225,14 +244,19 @@ class MCPDispatcher:
         params_to_use, sandbox_err = self._sandbox_params(
             server_name, mcp_tool_name, params
         )
+        result_params = (
+            _slack_result_params(params_to_use, params)
+            if server_name == "slack" and mcp_tool_name == "slack_post_message"
+            else params_to_use
+        )
         if sandbox_err:
             return self._result(
-                action_id, tool_type, server_name, mcp_tool_name, params_to_use,
+                action_id, tool_type, server_name, mcp_tool_name, result_params,
                 status="error", response=None, error=sandbox_err,
             )
 
         return self._dry_run_result(
-            action_id, tool_type, server_name, mcp_tool_name, params_to_use
+            action_id, tool_type, server_name, mcp_tool_name, result_params
         )
 
     def dispatch_all_sync(self, actions: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -305,9 +329,14 @@ class MCPDispatcher:
                     params_to_use, sandbox_err = self._sandbox_params(
                         server_name, mcp_tool_name, params
                     )
+                    result_params = (
+                        _slack_result_params(params_to_use, params)
+                        if server_name == "slack" and mcp_tool_name == "slack_post_message"
+                        else params_to_use
+                    )
                     if sandbox_err:
                         results.append(self._result(
-                            action_id, tool_type, server_name, mcp_tool_name, params_to_use,
+                            action_id, tool_type, server_name, mcp_tool_name, result_params,
                             status="error", response=None, error=sandbox_err,
                         ))
                         continue
@@ -316,7 +345,7 @@ class MCPDispatcher:
                     if tool is None:
                         available = list(tools_by_name.keys())
                         results.append(self._result(
-                            action_id, tool_type, server_name, mcp_tool_name, params_to_use,
+                            action_id, tool_type, server_name, mcp_tool_name, result_params,
                             status="error", response=None,
                             error=f"Tool '{mcp_tool_name}' not found. Available: {available}",
                         ))
@@ -325,13 +354,13 @@ class MCPDispatcher:
                     try:
                         response = await tool.ainvoke(params_to_use)
                         results.append(self._result(
-                            action_id, tool_type, server_name, mcp_tool_name, params_to_use,
+                            action_id, tool_type, server_name, mcp_tool_name, result_params,
                             status="success", response=response, error=None,
                         ))
                     except Exception as exc:  # noqa: BLE001
                         logger.exception("MCP dispatch failed for action %s", action_id)
                         results.append(self._result(
-                            action_id, tool_type, server_name, mcp_tool_name, params_to_use,
+                            action_id, tool_type, server_name, mcp_tool_name, result_params,
                             status="error", response=None, error=str(exc),
                         ))
 
@@ -385,12 +414,15 @@ class MCPDispatcher:
         server_cfg: dict,
         mcp_tool_name: str,
         params: dict,
+        result_params: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
+        """params = payload sent to MCP; result_params = payload in API response (includes display fields)."""
+        out_params = result_params if result_params is not None else params
         try:
             from langchain_mcp_adapters.client import MultiServerMCPClient  # type: ignore
         except ImportError as exc:
             return self._result(
-                action_id, tool_type, server_name, mcp_tool_name, params,
+                action_id, tool_type, server_name, mcp_tool_name, out_params,
                 status="error",
                 response=None,
                 error=(
@@ -417,7 +449,7 @@ class MCPDispatcher:
                 if tool is None:
                     available = [t.name for t in tools]
                     return self._result(
-                        action_id, tool_type, server_name, mcp_tool_name, params,
+                        action_id, tool_type, server_name, mcp_tool_name, out_params,
                         status="error",
                         response=None,
                         error=f"Tool '{mcp_tool_name}' not found. Available: {available}",
@@ -425,7 +457,7 @@ class MCPDispatcher:
 
                 response = await tool.ainvoke(params)
                 return self._result(
-                    action_id, tool_type, server_name, mcp_tool_name, params,
+                    action_id, tool_type, server_name, mcp_tool_name, out_params,
                     status="success",
                     response=response,
                     error=None,
@@ -434,7 +466,7 @@ class MCPDispatcher:
         except Exception as exc:  # noqa: BLE001
             logger.exception("MCP dispatch failed for action %s", action_id)
             return self._result(
-                action_id, tool_type, server_name, mcp_tool_name, params,
+                action_id, tool_type, server_name, mcp_tool_name, out_params,
                 status="error",
                 response=None,
                 error=str(exc),
