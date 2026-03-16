@@ -281,7 +281,12 @@ class ContactResolver:
             params = self._enrich_calendar(params, assignee, connection)
 
         elif tool_type == "send_notification":
-            params = self._enrich_notification(params, assignee, connection)
+            params = self._enrich_notification(
+                params,
+                assignee,
+                connection,
+                resolution.connection_key,
+            )
 
         elif tool_type == "create_jira_task":
             params = self._enrich_jira(params, assignee)
@@ -415,6 +420,7 @@ class ContactResolver:
         params: dict,
         assignee: Optional[str],
         connection: Optional[Connection],
+        connection_key: Optional[str] = None,
     ) -> dict:
         current_recipient = params.get("recipient") or ""
         recipient_is_valid = (
@@ -446,11 +452,12 @@ class ContactResolver:
             if connection.slack_channel:
                 params["recipient"] = connection.slack_channel
                 params["channel"] = "slack"
-                params["recipient_display_name"] = connection.slack_channel.lstrip("#")
+                # Use the connection key (team/department name) for display when available.
+                params["recipient_display_name"] = connection_key or connection.slack_channel.lstrip("#")
             elif connection.email:
                 params["recipient"] = connection.email
                 params["channel"] = "email"
-                params["recipient_display_name"] = assignee or connection.email
+                params["recipient_display_name"] = connection_key or assignee or connection.email
         elif not recipient_is_valid:
             slack = self.resolve_slack(assignee)
             if slack:
