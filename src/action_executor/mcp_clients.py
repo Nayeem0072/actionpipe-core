@@ -21,6 +21,7 @@ import json
 import logging
 import os
 import re
+import time
 from pathlib import Path
 from typing import Any, Optional
 
@@ -29,6 +30,32 @@ import httpx
 logger = logging.getLogger(__name__)
 
 _MCP_CONFIG_PATH = Path(__file__).parent.parent.parent / "mcp_config.json"
+
+# region agent log
+_DEBUG_LOG_PATH = Path(__file__).parent.parent.parent / ".cursor" / "debug.log"
+
+
+def _write_debug_log(message: str, data: dict[str, Any], hypothesis_id: str) -> None:
+    """Append one NDJSON debug log line to the shared debug file."""
+    try:
+        ts_ms = int(time.time() * 1000)
+        payload = {
+            "id": f"log_{ts_ms}",
+            "timestamp": ts_ms,
+            "location": "src/action_executor/mcp_clients.py",
+            "message": message,
+            "data": data,
+            "runId": data.get("runId") or "unknown",
+            "hypothesisId": hypothesis_id,
+        }
+        _DEBUG_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with _DEBUG_LOG_PATH.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(payload, default=str) + "\n")
+    except Exception:
+        return
+
+
+# endregion
 
 # Max length for Slack message text (prompt-injection / spam mitigation)
 _SLACK_TEXT_MAX_LEN = 4000
@@ -76,6 +103,21 @@ def _validate_and_map_slack_params(params: dict[str, Any]) -> tuple[dict[str, An
     if not isinstance(text_raw, str):
         text_raw = str(text_raw)
     text = text_raw[: _SLACK_TEXT_MAX_LEN].strip()
+
+    # region agent log
+    _write_debug_log(
+        "slack_param_mapping",
+        {
+            "runId": params.get("run_id") or params.get("runId") or "unknown",
+            "recipient": params.get("recipient"),
+            "channel": params.get("channel"),
+            "recipientDisplayName": params.get("recipient_display_name"),
+            "channelIdDerived": channel_id,
+            "textPreview": text[:120],
+        },
+        hypothesis_id="H4",
+    )
+    # endregion
     if _PROMPT_INJECTION_PATTERN.match(text):
         return (
             {"channel_id": channel_id, "text": text},
