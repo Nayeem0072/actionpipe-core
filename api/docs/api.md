@@ -19,6 +19,7 @@ python run_api.py
 |--------|------|-------------|
 | `POST` | `/runs` | Create a new pipeline run. **Protected:** requires JWT. Upload a file (or pass by reference), start processing, get `runId` and `streamUrl`. |
 | `GET`  | `/runs/{runId}/stream` | SSE stream for real-time progress. **Protected:** requires JWT (header or `?token=`). |
+| `POST` | `/runs/{runId}/actions/execute` | Execute selected Slack actions from a completed run. **Protected:** requires JWT. Sandboxed (allowlist + validation); rate limited per user. |
 
 All protected routes accept the JWT via **`Authorization: Bearer <token>`** or, for SSE where headers may be limited, via the **`token`** query parameter (e.g. `/runs/{runId}/stream?token=<jwt>`). The token is validated (Auth0 JWT); the token's claims and the DB user (get-or-create) are available as request "user details".
 
@@ -294,6 +295,58 @@ data: {"summary": {"actions_extracted": 5, "actions_normalized": 4, "actions_exe
 |--------|-----------|
 | `401` | Missing or invalid JWT (use header or `?token=`). |
 | `404` | `runId` not found (invalid or run never created). |
+| `503` | Auth0 not configured or JWKS unavailable. |
+
+---
+
+## POST /runs/{runId}/actions/execute
+
+Execute selected **Slack** actions from a completed run. The run must have finished (a `run_complete` event with `executor_actions`). Only actions with `server: "slack"` (tool type `send_notification`) can be executed; others return `400`. The Slack MCP server uses the **user's token from the `user_tokens` table** (from `/slack/connect`). Slack must be connected for the current user or the request returns `403`. Sandboxing (allowlist and parameter validation) and per-user rate limiting apply.
+
+### Request
+
+**Authentication:** required. Send JWT via `Authorization: Bearer <token>`.
+
+**Content-Type:** `application/json`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `actionIds` | array of string | Yes | Action `id` values from the run’s `executor_actions` (Slack actions only). Min length 1. |
+
+**Example (curl):**
+
+```bash
+curl -X POST http://localhost:8000/runs/a1b2c3d4e5f6/actions/execute \
+  -H "Authorization: Bearer <your-jwt>" \
+  -H "Content-Type: application/json" \
+  -d '{"actionIds": ["388e66b7", "9b82695e"]}'
+```
+
+### Response
+
+**Status:** `200 OK`
+
+**Body (JSON):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `executor_actions` | array | One object per executed action: `id`, `tool_type`, `server`, `mcp_tool`, `params`, `status` (`"success"` \| `"error"`), `response`, `error`. Same shape as in the stream’s `run_complete` payload. |
+
+### Sandbox and rate limits
+
+- **Tool allowlist:** Only tools listed in `mcp_config.json` → `allowedTools` are invoked. For Slack, only `slack_post_message` is allowed.
+- **Parameter validation:** Slack params are mapped to `channel_id` and `text`; message length is capped; content that matches instruction-override patterns is rejected.
+- **Rate limit:** Per user, max `SLACK_EXECUTE_LIMIT_PER_MINUTE` Slack executions per 60-second window (default 10). Returns `429` when exceeded.
+
+### Errors
+
+| Status | Condition |
+|--------|-----------|
+| `400` | Unknown `actionIds`; or one or more ids are not Slack actions (only Slack actions can be executed). |
+| `401` | Missing or invalid JWT. |
+| `403` | Slack not connected for the current user; connect via `/slack/connect` first. |
+| `404` | Run not found or access denied; or run has no completed response yet. |
+| `429` | Rate limit exceeded (too many Slack executions in the last minute). |
 | `503` | Auth0 not configured or JWKS unavailable. |
 
 ---

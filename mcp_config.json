@@ -1,62 +1,24 @@
 {
   "_comment": "MCP server definitions for the action executor. Each key maps to a ToolType.",
+  "_comment_gmail_calendar": "Gmail/Calendar: @googleapis/mcp-server-* do not exist on npm. Use e.g. @shinzolabs/gmail-mcp, @iflow-mcp/google-calendar-mcp (tool names may differ).",
   "mcpServers": {
-    "gmail": {
-      "_toolType": "send_email",
-      "_mcpTool": "send_email",
-      "command": "npx",
-      "args": ["-y", "@googleapis/mcp-server-gmail"],
-      "env": {
-        "GMAIL_OAUTH_PATH": "${GMAIL_OAUTH_PATH}"
-      }
-    },
-    "calendar": {
-      "_toolType": "set_calendar",
-      "_mcpTool": "create_event",
-      "command": "npx",
-      "args": ["-y", "@googleapis/mcp-server-calendar"],
-      "env": {
-        "CALENDAR_OAUTH_PATH": "${CALENDAR_OAUTH_PATH}"
-      }
-    },
     "slack": {
       "_toolType": "send_notification",
       "_mcpTool": "slack_post_message",
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-slack"],
+      "_comment_env": "For POST /runs/:id/actions/execute these are overridden by the user's Slack token from user_tokens (server_env_overrides). Here they are fallback for CLI/other callers (${VAR} = process env).",
       "env": {
         "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
         "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
       }
-    },
-    "notion": {
-      "_toolType": "create_notion_doc",
-      "_mcpTool": "notion_create_page",
-      "command": "npx",
-      "args": ["-y", "@notionhq/notion-mcp-server"],
-      "env": {
-        "NOTION_API_TOKEN": "${NOTION_API_TOKEN}"
-      }
-    },
-    "jira": {
-      "_toolType": "create_jira_task",
-      "_mcpTool": "jira_create_issue",
-      "command": "npx",
-      "args": ["-y", "jira-mcp-server"],
-      "env": {
-        "JIRA_URL": "${JIRA_URL}",
-        "JIRA_EMAIL": "${JIRA_EMAIL}",
-        "JIRA_API_TOKEN": "${JIRA_API_TOKEN}",
-        "JIRA_PROJECT_KEY": "${JIRA_PROJECT_KEY}"
-      }
     }
   },
   "toolTypeToServer": {
-    "send_email":        "gmail",
-    "set_calendar":      "calendar",
     "send_notification": "slack",
-    "create_notion_doc": "notion",
-    "create_jira_task":  "jira",
     "general_task":      null
+  },
+  "allowedTools": {
+    "slack": ["slack_post_message"]
   }
 }

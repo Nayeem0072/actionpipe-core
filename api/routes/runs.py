@@ -3,9 +3,7 @@ Runs API: create pipeline runs (upload + details) and stream progress via SSE.
 
   POST /runs       — Create run (multipart: file, meetingDate, language), return runId + streamUrl.
   GET  /runs/{id}/stream — SSE stream for extractor → normalizer → executor progress.
-
-Pipeline execution is offloaded to Celery workers. Progress events are published
-to a Redis Pub/Sub channel (``run:{run_id}:events``) and forwarded to SSE clients.
+  POST /runs/{id}/actions/execute — Execute selected Slack actions from a completed run.
 """
 import asyncio
 import json
@@ -19,12 +17,13 @@ import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.requests import Request
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth import UserDetails, get_user_details
 from api.db import get_db
-from api.models import AgentRunTask, RunRequestLog
+from api.models import AgentRunTask, RunRequestLog, RunResponseLog, UserToken
 
 MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024  # 15 MB
 ALLOWED_EXTENSIONS = {".csv", ".txt", ".doc", ".pdf"}
@@ -32,8 +31,45 @@ UPLOAD_DIR = Path(__file__).resolve().parent.parent / "uploads"
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 CELERY_MAX_RETRIES = int(os.getenv("CELERY_MAX_RETRIES", "3"))
+# Per-user rate limit for executing Slack actions (per minute)
+SLACK_EXECUTE_LIMIT_PER_MINUTE = int(os.getenv("SLACK_EXECUTE_LIMIT_PER_MINUTE", "10"))
 
 router = APIRouter(prefix="/runs", tags=["runs"])
+
+
+async def _check_slack_execute_rate_limit(user_id: str, count: int = 1) -> None:
+    """
+    Sliding-window rate limit for Slack action execution per user.
+    Raises HTTPException 429 if the user would exceed SLACK_EXECUTE_LIMIT_PER_MINUTE in 60s.
+    """
+    if SLACK_EXECUTE_LIMIT_PER_MINUTE <= 0:
+        return
+    key = f"ratelimit:slack_execute:{user_id}"
+    window = 60
+    now = asyncio.get_event_loop().time()
+    window_start = now - window
+    try:
+        redis_client = aioredis.from_url(REDIS_URL, decode_responses=True)
+        try:
+            await redis_client.zremrangebyscore(key, "-inf", window_start)
+            current = await redis_client.zcard(key)
+            if current + count > SLACK_EXECUTE_LIMIT_PER_MINUTE:
+                await redis_client.aclose()
+                raise HTTPException(
+                    status_code=429,
+                    detail=f"Rate limit exceeded: max {SLACK_EXECUTE_LIMIT_PER_MINUTE} Slack executions per minute",
+                )
+            # Record this request (one member per action executed)
+            for i in range(count):
+                await redis_client.zadd(key, {f"{now}:{i}:{uuid.uuid4().hex}": now})
+            await redis_client.expire(key, window + 10)
+        finally:
+            await redis_client.aclose()
+    except HTTPException:
+        raise
+    except Exception:
+        # If Redis is down, allow the request (fail open for availability)
+        pass
 
 
 def _ensure_upload_dir() -> Path:
@@ -256,3 +292,131 @@ async def stream_run(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# POST /runs/{run_id}/actions/execute — Execute selected Slack actions
+# ---------------------------------------------------------------------------
+
+
+class ExecuteActionsBody(BaseModel):
+    """Request body for executing selected actions from a run."""
+
+    actionIds: list[str] = Field(..., min_length=1, description="Action ids from executor_actions to execute (Slack only)")
+
+
+@router.post("/{run_id}/actions/execute")
+async def execute_run_actions(
+    run_id: str,
+    body: ExecuteActionsBody,
+    user_details: Annotated[UserDetails, Depends(get_user_details)],
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Execute selected Slack actions from a completed run.
+
+    Loads the run's stored executor_actions, filters to Slack actions whose id
+    is in actionIds, then invokes the Slack MCP server for each (with sandbox
+    and optional user Slack token). Returns per-action results.
+    """
+    # 1. Resolve run_id -> RunRequestLog, ensure user owns the run
+    request_result = await db.execute(
+        select(RunRequestLog).where(
+            RunRequestLog.run_id == run_id,
+            RunRequestLog.user_id == user_details.user.id,
+        )
+    )
+    request_log = request_result.scalars().first()
+    if not request_log:
+        raise HTTPException(status_code=404, detail="Run not found or access denied")
+
+    # 2. Load latest completed run response
+    response_result = await db.execute(
+        select(RunResponseLog)
+        .where(
+            RunResponseLog.request_id == request_log.id,
+            RunResponseLog.status == "completed",
+        )
+        .order_by(RunResponseLog.created_at.desc())
+        .limit(1)
+    )
+    response_log = response_result.scalars().first()
+    if not response_log or not response_log.response_data:
+        raise HTTPException(
+            status_code=404,
+            detail="Run has no completed response yet; wait for the pipeline to finish",
+        )
+
+    executor_actions = response_log.response_data.get("executor_actions") or []
+    if not isinstance(executor_actions, list):
+        raise HTTPException(status_code=500, detail="Invalid run response data")
+
+    action_ids_set = set(body.actionIds)
+    # 3. Filter to requested actions that are Slack
+    slack_actions = [
+        a for a in executor_actions
+        if isinstance(a, dict)
+        and a.get("id") in action_ids_set
+        and (a.get("server") == "slack" or a.get("tool_type") == "send_notification")
+    ]
+    found_ids = {a["id"] for a in slack_actions}
+    missing = action_ids_set - found_ids
+    if missing:
+        # Check if they exist but are not Slack
+        all_ids = {a.get("id") for a in executor_actions if isinstance(a, dict) and a.get("id")}
+        not_found = missing - all_ids
+        if not_found:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown action id(s): {sorted(not_found)}",
+            )
+        non_slack = missing & all_ids
+        raise HTTPException(
+            status_code=400,
+            detail=f"Only Slack actions can be executed. Non-Slack action id(s): {sorted(non_slack)}",
+        )
+
+    # Rate limit: max N Slack executions per minute per user
+    await _check_slack_execute_rate_limit(str(user_details.user.id), count=len(slack_actions))
+
+    # 4. Build action list for MCPDispatcher (id, tool_type, tool_params)
+    actions_for_dispatch = [
+        {
+            "id": a["id"],
+            "tool_type": a.get("tool_type", "send_notification"),
+            "tool_params": a.get("params", {}),
+        }
+        for a in slack_actions
+    ]
+
+    # Use the user's Slack token from user_tokens for the MCP server
+    server_env_overrides: dict[str, dict[str, str]] = {}
+    token_result = await db.execute(
+        select(UserToken).where(
+            UserToken.user_id == user_details.user.id,
+            UserToken.service == "slack",
+        )
+    )
+    slack_token_row = token_result.scalars().first()
+    if not slack_token_row or not slack_token_row.access_token:
+        raise HTTPException(
+            status_code=403,
+            detail="Slack is not connected. Connect your Slack workspace first (e.g. via /slack/connect).",
+        )
+    server_env_overrides["slack"] = {
+        "SLACK_BOT_TOKEN": slack_token_row.access_token,
+    }
+    meta = slack_token_row.meta or {}
+    if meta.get("team_id"):
+        server_env_overrides["slack"]["SLACK_TEAM_ID"] = meta["team_id"]
+
+    # 5. Dispatch via MCP (sandbox is applied inside MCPDispatcher)
+    from src.action_executor.mcp_clients import MCPDispatcher
+
+    dispatcher = MCPDispatcher(
+        dry_run=False,
+        server_env_overrides=server_env_overrides if server_env_overrides else None,
+    )
+    results = await dispatcher.dispatch_all(actions_for_dispatch)
+
+    return {"executor_actions": results}

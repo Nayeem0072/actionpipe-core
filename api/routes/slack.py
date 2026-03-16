@@ -36,8 +36,8 @@ SLACK_FRONTEND_REDIRECT = os.getenv("SLACK_FRONTEND_REDIRECT", "http://localhost
 _SLACK_AUTHORIZE_URL = "https://slack.com/oauth/v2/authorize"
 _SLACK_TOKEN_URL = "https://slack.com/api/oauth.v2.access"
 
-# Scopes the bot token will have. Extend when pipeline integration is added.
-_BOT_SCOPES = "chat:write,channels:read,users:read,users:read.email"
+# Scopes the bot token will have. im:write required for conversations.open (DM channel resolution).
+_BOT_SCOPES = "chat:write,channels:read,users:read,users:read.email,im:write"
 
 
 def _require_config() -> None:

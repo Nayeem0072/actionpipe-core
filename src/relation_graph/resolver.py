@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from pathlib import Path
 from typing import Any, Optional
 
@@ -13,6 +14,36 @@ from .models import Connection, Person, RelationGraph
 logger = logging.getLogger(__name__)
 
 _DEFAULT_CONTACTS_PATH = Path(__file__).parent / "contacts.json"
+
+# region agent log
+_DEBUG_LOG_PATH = Path(__file__).resolve().parents[2] / ".cursor" / "debug.log"
+
+
+def _write_debug_log(message: str, data: dict[str, Any], hypothesis_id: str) -> None:
+    """
+    Append a single NDJSON debug log line to the shared debug file.
+    Kept intentionally tiny for runtime debugging.
+    """
+    try:
+        ts_ms = int(time.time() * 1000)
+        payload = {
+            "id": f"log_{ts_ms}",
+            "timestamp": ts_ms,
+            "location": "src/relation_graph/resolver.py",
+            "message": message,
+            "data": data,
+            "runId": data.get("runId") or "unknown",
+            "hypothesisId": hypothesis_id,
+        }
+        _DEBUG_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with _DEBUG_LOG_PATH.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(payload, default=str) + "\n")
+    except Exception:
+        # Logging must never break the main flow
+        return
+
+
+# endregion
 
 
 # ---------------------------------------------------------------------------
@@ -221,6 +252,22 @@ class ContactResolver:
             topic_tags=topic_tags,
         )
 
+        # region agent log
+        _write_debug_log(
+            "contact_resolution",
+            {
+                "runId": action.get("run_id") or action.get("runId") or "unknown",
+                "actionId": action.get("id"),
+                "toolType": tool_type,
+                "assignee": assignee,
+                "connectionKey": resolution.connection_key,
+                "hasConnection": bool(connection),
+                "topicTags": topic_tags,
+            },
+            hypothesis_id="H1",
+        )
+        # endregion
+
         action["connection_resolution"] = {
             "connection_key": resolution.connection_key,
             "confidence": resolution.confidence,
@@ -234,7 +281,12 @@ class ContactResolver:
             params = self._enrich_calendar(params, assignee, connection)
 
         elif tool_type == "send_notification":
-            params = self._enrich_notification(params, assignee, connection)
+            params = self._enrich_notification(
+                params,
+                assignee,
+                connection,
+                resolution.connection_key,
+            )
 
         elif tool_type == "create_jira_task":
             params = self._enrich_jira(params, assignee)
@@ -368,6 +420,7 @@ class ContactResolver:
         params: dict,
         assignee: Optional[str],
         connection: Optional[Connection],
+        connection_key: Optional[str] = None,
     ) -> dict:
         current_recipient = params.get("recipient") or ""
         recipient_is_valid = (
@@ -377,16 +430,34 @@ class ContactResolver:
             or "@" in current_recipient
         )
 
-        if connection and not recipient_is_valid:
+        # region agent log
+        _write_debug_log(
+            "notification_before_enrich",
+            {
+                "runId": params.get("run_id") or params.get("runId") or "unknown",
+                "assignee": assignee,
+                "currentRecipient": current_recipient,
+                "recipientIsValid": recipient_is_valid,
+                "hasConnection": bool(connection),
+                "connectionSlackChannel": getattr(connection, "slack_channel", None) if connection else None,
+            },
+            hypothesis_id="H2",
+        )
+        # endregion
+
+        # Prefer org contacts (DB / contacts graph) over the LLM's free-text recipient.
+        # If a connection exists, always use its Slack channel or email, regardless of
+        # whether the current recipient string "looks valid".
+        if connection:
             if connection.slack_channel:
                 params["recipient"] = connection.slack_channel
                 params["channel"] = "slack"
-                # Display name for channels: strip leading # for frontend
-                params["recipient_display_name"] = connection.slack_channel.lstrip("#")
+                # Use the connection key (team/department name) for display when available.
+                params["recipient_display_name"] = connection_key or connection.slack_channel.lstrip("#")
             elif connection.email:
                 params["recipient"] = connection.email
                 params["channel"] = "email"
-                params["recipient_display_name"] = assignee or connection.email
+                params["recipient_display_name"] = connection_key or assignee or connection.email
         elif not recipient_is_valid:
             slack = self.resolve_slack(assignee)
             if slack:
@@ -407,6 +478,28 @@ class ContactResolver:
                 params["recipient_display_name"] = assignee or r
             else:
                 params["recipient_display_name"] = assignee or r
+        # Ensure frontend always has a display name (e.g. when recipient couldn't be resolved)
+        if "recipient_display_name" not in params:
+            hint = (params.get("message_hint") or "")[:50].strip()
+            params["recipient_display_name"] = (
+                assignee or params.get("recipient") or hint or "Unknown"
+            )
+
+        # region agent log
+        _write_debug_log(
+            "notification_after_enrich",
+            {
+                "runId": params.get("run_id") or params.get("runId") or "unknown",
+                "assignee": assignee,
+                "finalRecipient": params.get("recipient"),
+                "channel": params.get("channel"),
+                "recipientDisplayName": params.get("recipient_display_name"),
+                "messageHint": (params.get("message_hint") or "")[:80],
+            },
+            hypothesis_id="H3",
+        )
+        # endregion
+
         return params
 
     def _enrich_jira(self, params: dict, assignee: Optional[str]) -> dict:
