@@ -1,6 +1,6 @@
 # Jira Integration API
 
-Allows users to connect their Atlassian/Jira account via OAuth 2.0 (3LO). Once connected, their access token and refresh token are stored securely and can be used by the pipeline to create and manage Jira issues.
+Allows users to connect their Atlassian/Jira account via OAuth 2.0 (3LO). Once connected, their access token and refresh token are stored securely and used by the pipeline to create and manage Jira issues.
 
 **Base URL (local):** `http://localhost:8000`  
 **Interactive docs:** `http://localhost:8000/docs`
@@ -13,14 +13,16 @@ Allows users to connect their Atlassian/Jira account via OAuth 2.0 (3LO). Once c
 |--------|------|:---:|-------------|
 | `GET` | `/jira/connect` | Yes | Get the Atlassian OAuth authorization URL to redirect the user to |
 | `GET` | `/jira/callback` | No | Atlassian redirects here after the user approves — exchanges code for tokens and stores them |
-| `GET` | `/jira/status` | Yes | Check whether the current user has connected their Jira account |
+| `GET` | `/jira/status` | Yes | Check connection state and saved default project key |
 | `DELETE` | `/jira/disconnect` | Yes | Remove the user's stored Jira tokens |
+| `GET` | `/jira/projects` | Yes | List all Jira projects accessible to the user |
+| `PATCH` | `/jira/settings` | Yes | Save the user's default Jira project key |
 
 All protected routes accept the JWT via **`Authorization: Bearer <token>`**.
 
 ---
 
-## OAuth Flow
+## OAuth + Project Setup Flow
 
 ```
 1. Frontend calls GET /jira/connect → gets a URL
@@ -29,7 +31,10 @@ All protected routes accept the JWT via **`Authorization: Bearer <token>`**.
 4. Backend exchanges the code for access + refresh tokens
 5. Backend calls accessible-resources to resolve the user's cloud_id and site_url
 6. Backend stores the tokens, redirects user to JIRA_FRONTEND_REDIRECT
-7. Frontend detects ?jira=connected and shows a success state
+7. Frontend detects ?jira=connected → calls GET /jira/projects
+8. Frontend shows a project picker (dropdown)
+9. User picks a project → frontend calls PATCH /jira/settings
+10. Default project key saved — pipeline execute works without passing projectKey every time
 ```
 
 ```mermaid
@@ -44,16 +49,19 @@ sequenceDiagram
     API-->>Frontend: {url: "https://auth.atlassian.com/authorize?..."}
     Frontend->>ATL: browser redirects to Atlassian consent screen
     User->>ATL: approves the connection
-    Note over ATL,API: Atlassian redirects browser to JIRA_REDIRECT_URI<br/>(e.g. https://your-ngrok.ngrok-free.app/jira/callback)
+    Note over ATL,API: Atlassian redirects browser to JIRA_REDIRECT_URI
     ATL-->>API: GET /jira/callback?code=xxx&state=yyy
     API->>ATL: POST /oauth/token (exchange code for tokens)
     ATL-->>API: {access_token, refresh_token, expires_in}
     API->>RES: GET /oauth/token/accessible-resources
     RES-->>API: [{id: cloud_id, url: site_url, name: site_name}]
     API->>API: upsert UserToken(service="jira")
-    Note over API,Frontend: API redirects browser to JIRA_FRONTEND_REDIRECT<br/>(e.g. http://localhost:5173/settings?jira=connected)
-    API-->>Frontend: 302 redirect to frontend
-    Frontend->>Frontend: detect ?jira=connected → show success state
+    API-->>Frontend: 302 redirect → JIRA_FRONTEND_REDIRECT?jira=connected
+    Frontend->>API: GET /jira/projects
+    API-->>Frontend: {projects: [{key, name, type}, ...], saved_project_key: null}
+    User->>Frontend: picks a project from dropdown
+    Frontend->>API: PATCH /jira/settings {project_key: "KAN"}
+    API-->>Frontend: {project_key: "KAN"}
 ```
 
 ---
@@ -100,8 +108,6 @@ JIRA_REDIRECT_URI=https://your-ngrok-url.ngrok-free.app/jira/callback
 JIRA_FRONTEND_REDIRECT=http://localhost:5173/settings?jira=connected
 ```
 
-> **Note:** These credentials are for the **user-facing OAuth flow** (so users can connect their own Jira accounts). These are separate from `JIRA_URL` / `JIRA_EMAIL` / `JIRA_API_TOKEN` which are used by the MCP server for service-level access.
-
 ---
 
 ## GET /jira/connect
@@ -126,7 +132,7 @@ No request body or query parameters.
 
 The URL includes `prompt=consent` to ensure a `refresh_token` is always returned by Atlassian.
 
-### Example (fetch)
+### Example
 
 ```js
 const res = await fetch('http://localhost:8000/jira/connect', {
@@ -166,7 +172,7 @@ After the redirect, detect the result from the URL query string:
 const params = new URLSearchParams(window.location.search);
 
 if (params.get('jira') === 'connected') {
-  // show success toast / refresh status
+  // fetch /jira/projects and show project picker
 }
 ```
 
@@ -182,7 +188,7 @@ if (params.get('jira') === 'connected') {
 
 ## GET /jira/status
 
-Check whether the current user has a connected Jira account.
+Check whether the current user has a connected Jira account and what their saved default project key is.
 
 ### Request
 
@@ -197,29 +203,29 @@ Check whether the current user has a connected Jira account.
   "connected": true,
   "site_url": "https://yourcompany.atlassian.net",
   "site_name": "Your Company",
-  "scope": "read:jira-user write:jira-work read:jira-work offline_access"
+  "scope": "read:jira-user write:jira-work read:jira-work offline_access",
+  "project_key": "KAN"
 }
 ```
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `connected` | boolean | `true` if a Jira token exists for this user |
-| `site_url` | string \| null | The Atlassian site URL (e.g. `https://yourcompany.atlassian.net`), or `null` if not connected |
+| `site_url` | string \| null | The Atlassian site URL, or `null` if not connected |
 | `site_name` | string \| null | The human-readable name of the Atlassian site, or `null` if not connected |
 | `scope` | string \| null | Space-separated list of granted OAuth scopes, or `null` if not connected |
+| `project_key` | string \| null | The saved default project key (set via `PATCH /jira/settings`), or `null` if not yet saved |
 
-### Example (fetch)
+### Example
 
 ```js
 const res = await fetch('http://localhost:8000/jira/status', {
   headers: { Authorization: `Bearer ${jwt}` },
 });
-const status = await res.json();
+const { connected, site_name, project_key } = await res.json();
 
-if (status.connected) {
-  console.log(`Connected to "${status.site_name}" (${status.site_url})`);
-} else {
-  console.log('Jira not connected');
+if (connected) {
+  console.log(`Connected to "${site_name}", default project: ${project_key ?? 'not set'}`);
 }
 ```
 
@@ -239,7 +245,7 @@ No request body.
 
 **Status:** `204 No Content`
 
-### Example (fetch)
+### Example
 
 ```js
 await fetch('http://localhost:8000/jira/disconnect', {
@@ -251,31 +257,151 @@ await fetch('http://localhost:8000/jira/disconnect', {
 
 ---
 
+## GET /jira/projects
+
+List all Jira projects the user has access to on their connected Atlassian site. Call this after `/jira/connect` to populate a project picker.
+
+### Request
+
+**Authentication:** required. Send JWT via `Authorization: Bearer <token>`.
+
+No request body or query parameters.
+
+### Response
+
+**Status:** `200 OK`
+
+```json
+{
+  "projects": [
+    { "key": "KAN", "name": "Kanban Board", "type": "software", "style": "next-gen" },
+    { "key": "ENG", "name": "Engineering", "type": "software", "style": "classic" },
+    { "key": "PLAT", "name": "Platform", "type": "business", "style": "" }
+  ],
+  "saved_project_key": "KAN"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `projects` | array | All projects accessible to the user, sorted by name |
+| `projects[].key` | string | The project key used in issue identifiers (e.g. `KAN` in `KAN-5`) |
+| `projects[].name` | string | Human-readable project name |
+| `projects[].type` | string | `"software"`, `"business"`, or `"service_desk"` |
+| `projects[].style` | string | `"next-gen"`, `"classic"`, or empty |
+| `saved_project_key` | string \| null | The currently saved default from `PATCH /jira/settings`, or `null` |
+
+### Error responses
+
+| Status | When |
+|--------|------|
+| `403` | Jira not connected or token cannot be refreshed |
+| `422` | `cloud_id` missing from token metadata — reconnect |
+| `502` | Could not reach Atlassian API |
+
+### Example
+
+```js
+const res = await fetch('http://localhost:8000/jira/projects', {
+  headers: { Authorization: `Bearer ${jwt}` },
+});
+const { projects, saved_project_key } = await res.json();
+
+// populate a <select> dropdown
+projects.forEach(p => {
+  const opt = document.createElement('option');
+  opt.value = p.key;
+  opt.textContent = `${p.name} (${p.key})`;
+  opt.selected = p.key === saved_project_key;
+  select.appendChild(opt);
+});
+```
+
+---
+
+## PATCH /jira/settings
+
+Save the user's default Jira project key. Once saved, `POST /runs/{id}/jira_actions/execute` will use it automatically — no need to pass `projectKey` on every execute call.
+
+### Request
+
+**Authentication:** required. Send JWT via `Authorization: Bearer <token>`.
+
+**Content-Type:** `application/json`
+
+```json
+{
+  "project_key": "KAN"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|:--------:|-------------|
+| `project_key` | string | Yes | Jira project key to save as default (e.g. `"KAN"`). Case-insensitive — stored uppercased. |
+
+### Response
+
+**Status:** `200 OK`
+
+```json
+{
+  "project_key": "KAN"
+}
+```
+
+### Error responses
+
+| Status | When |
+|--------|------|
+| `403` | Jira not connected |
+| `422` | `project_key` is empty |
+
+### Example
+
+```js
+await fetch('http://localhost:8000/jira/settings', {
+  method: 'PATCH',
+  headers: {
+    Authorization: `Bearer ${jwt}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ project_key: selectedKey }),
+});
+```
+
+---
+
 ## Suggested UI Flow (Settings Page)
 
 ```
-┌─────────────────────────────────────────┐
-│  Integrations                           │
-│                                         │
-│  Jira                                   │
-│  ┌─────────────────────────────────┐    │
-│  │ ● Connected — Your Company     │    │
-│  │ yourcompany.atlassian.net       │    │
-│  │                    [Disconnect] │    │
-│  └─────────────────────────────────┘    │
-│                                         │
-│  — or when not connected —              │
-│  ┌─────────────────────────────────┐    │
-│  │  Jira not connected             │    │
-│  │                   [Connect Jira]│    │
-│  └─────────────────────────────────┘    │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│  Integrations                                │
+│                                              │
+│  Jira                                        │
+│  ┌────────────────────────────────────────┐  │
+│  │ ● Connected — Your Company             │  │
+│  │   yourcompany.atlassian.net            │  │
+│  │                                        │  │
+│  │   Default project:                     │  │
+│  │   ┌─────────────────┐                  │  │
+│  │   │ Kanban (KAN)  ▾ │  [Save]          │  │
+│  │   └─────────────────┘                  │  │
+│  │                          [Disconnect]  │  │
+│  └────────────────────────────────────────┘  │
+│                                              │
+│  — or when not connected —                   │
+│  ┌────────────────────────────────────────┐  │
+│  │  Jira not connected                    │  │
+│  │                       [Connect Jira]   │  │
+│  └────────────────────────────────────────┘  │
+└──────────────────────────────────────────────┘
 ```
 
-1. On page load, call `GET /jira/status` to check connection state.
+1. On page load, call `GET /jira/status` to check connection state and `project_key`.
 2. **Connect button** → call `GET /jira/connect`, redirect user to the returned URL.
-3. On return (`?jira=connected` in URL), re-fetch status and show success.
-4. **Disconnect button** → call `DELETE /jira/disconnect`, re-fetch status.
+3. On return (`?jira=connected` in URL), call `GET /jira/projects` and show a project dropdown with the `saved_project_key` pre-selected.
+4. **Save button** → call `PATCH /jira/settings` with the chosen key.
+5. **Disconnect button** → call `DELETE /jira/disconnect`, re-fetch status.
 
 ---
 
@@ -285,15 +411,16 @@ Tokens are stored in the `user_tokens` table under `service="jira"`:
 
 | Column | Value |
 |--------|-------|
-| `access_token` | Short-lived Atlassian access token |
+| `access_token` | Short-lived Atlassian access token (auto-refreshed when near expiry) |
 | `refresh_token` | Long-lived token used to obtain new access tokens |
 | `expires_at` | UTC timestamp when the access token expires (typically 1 hour from issue) |
-| `meta.cloud_id` | Atlassian cloud ID — required as a path parameter for all Jira REST API calls |
+| `meta.cloud_id` | Atlassian cloud ID — required for all Jira REST API calls |
 | `meta.site_url` | Base URL of the Atlassian site (e.g. `https://yourcompany.atlassian.net`) |
 | `meta.site_name` | Human-readable name of the Atlassian site |
 | `meta.scope` | Space-separated granted scopes |
+| `meta.project_key` | User's saved default project key (set via `PATCH /jira/settings`) |
 
-> **cloud_id note:** The `cloud_id` from `meta` is required when making Jira API calls. All Jira REST API v3 requests are scoped to a specific cloud instance via `https://api.atlassian.com/ex/jira/{cloud_id}/rest/api/3/...`.
+> **cloud_id note:** All Jira REST API v3 requests are scoped to a specific cloud instance via `https://api.atlassian.com/ex/jira/{cloud_id}/rest/api/3/...`.
 
 ---
 
@@ -301,9 +428,12 @@ Tokens are stored in the `user_tokens` table under `service="jira"`:
 
 | Status | Meaning |
 |--------|---------|
+| `200` | Success |
 | `204` | Success (disconnect) |
 | `302` | Callback redirect to frontend (normal OAuth completion) |
 | `400` | Bad request — invalid state or Atlassian OAuth error |
 | `401` | Missing or invalid JWT |
+| `403` | Jira not connected or token refresh failed |
+| `422` | Missing required field (e.g. `cloud_id`, `project_key`) |
 | `502` | Could not reach Atlassian's API |
 | `503` | Jira OAuth not configured on the server (missing env vars) |

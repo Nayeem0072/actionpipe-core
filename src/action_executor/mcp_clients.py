@@ -21,6 +21,7 @@ import json
 import logging
 import os
 import re
+import sys
 import time
 from pathlib import Path
 from typing import Any, Optional
@@ -143,6 +144,144 @@ def _slack_result_params(mapped_params: dict[str, Any], original_params: dict[st
     return out
 
 
+# ---------------------------------------------------------------------------
+# Jira helpers
+# ---------------------------------------------------------------------------
+
+# Max length for Jira issue summary (Jira's own hard limit is 255 chars)
+_JIRA_SUMMARY_MAX_LEN = 255
+
+# Valid priority words accepted from normalizer output
+_JIRA_VALID_PRIORITIES = frozenset(
+    {"critical", "urgent", "blocker", "high", "medium", "normal", "low", "lowest", "minor"}
+)
+
+# Jira account IDs are alphanumeric strings (with optional colons/hyphens) and
+# never contain spaces or commas. Display names like "John" or "John, Mike" fail
+# this check and should be treated as unresolved names rather than account IDs.
+_JIRA_ACCOUNT_ID_RE = re.compile(r"^[a-zA-Z0-9:_-]{8,}$")
+
+
+def _validate_and_map_jira_params(
+    params: dict[str, Any],
+) -> tuple[dict[str, Any], Optional[str]]:
+    """
+    Map normalizer tool_params for create_jira_task to jira_create_issue MCP schema.
+
+    Normalizer emits: title, assignee (account_id after relation-graph resolution),
+    priority, due_date, labels, and optionally project_key.
+
+    MCP tool expects: project_key, summary, description?, assignee_account_id?,
+    priority?, due_date?, labels?, issue_type?.
+
+    Falls back to JIRA_PROJECT_KEY env var when project_key is absent from params.
+
+    Returns (mapped_params, error_message). error_message is None on success.
+    """
+    # project_key: must be present in params (injected at request time by the API).
+    # The JIRA_PROJECT_KEY env var is accepted only as a last-resort fallback for
+    # CLI / dry-run usage where no API request is involved.
+    project_key = (
+        (params.get("project_key") or "").strip().upper()
+        or os.environ.get("JIRA_PROJECT_KEY", "").strip().upper()
+    )
+    if not project_key:
+        return (
+            params,
+            "Jira project_key is required. Pass 'projectKey' in the execute request body.",
+        )
+
+    # summary: from title or description
+    summary_raw = params.get("title") or params.get("summary") or params.get("description") or ""
+    if not isinstance(summary_raw, str):
+        summary_raw = str(summary_raw)
+    summary = summary_raw.strip()[:_JIRA_SUMMARY_MAX_LEN]
+    if not summary:
+        return (params, "Jira issue summary (title) is required")
+
+    assignee = (params.get("assignee") or "").strip()
+
+    # If assignee looks like a real Jira account ID, pass it to the API.
+    # If it looks like a display name (e.g. "John" or "John, Mike") — meaning the
+    # relation graph couldn't resolve it — append it to the summary instead so the
+    # information isn't lost without causing a 400 from the Jira API.
+    assignee_account_id: Optional[str] = None
+    if assignee:
+        if _JIRA_ACCOUNT_ID_RE.match(assignee):
+            assignee_account_id = assignee
+        else:
+            summary = f"{summary} - [Assignee: {assignee}]"
+            summary = summary[:_JIRA_SUMMARY_MAX_LEN]
+
+    mapped: dict[str, Any] = {
+        "project_key": project_key,
+        "summary": summary,
+        "issue_type": str(params.get("issue_type") or "Task"),
+    }
+
+    if assignee_account_id:
+        mapped["assignee_account_id"] = assignee_account_id
+
+    priority_raw = (params.get("priority") or "").strip().lower()
+    if priority_raw:
+        if priority_raw not in _JIRA_VALID_PRIORITIES:
+            logger.warning("Unknown Jira priority '%s'; passing through as-is", priority_raw)
+        mapped["priority"] = priority_raw
+
+    due_date = (params.get("due_date") or params.get("normalized_deadline") or "").strip()
+    if due_date:
+        mapped["due_date"] = due_date
+
+    labels = params.get("labels")
+    if labels and isinstance(labels, list):
+        mapped["labels"] = [str(lbl) for lbl in labels if lbl]
+
+    description = (params.get("description") or "").strip()
+    if description and description != summary:
+        mapped["description"] = description
+
+    return (mapped, None)
+
+
+def _parse_jira_mcp_response(response: Any) -> tuple[bool, Optional[str], Optional[str]]:
+    """
+    Parse MCP tool response from the Jira server.
+
+    The Jira server returns a JSON string in the first text content item,
+    shaped as {"ok": true, "key": "PROJ-1"} or {"ok": false, "error": "..."}.
+
+    Returns (ok, issue_key, error_message).
+    """
+    if not response:
+        return True, None, None
+
+    # MCP responses are typically lists of content items
+    text: Optional[str] = None
+    if isinstance(response, list):
+        for item in response:
+            if isinstance(item, dict) and item.get("type") == "text":
+                text = item.get("text")
+                break
+    elif isinstance(response, str):
+        text = response
+
+    if not text:
+        return True, None, None
+
+    try:
+        data = json.loads(text)
+    except (TypeError, ValueError):
+        return True, None, None
+
+    if not isinstance(data, dict):
+        return True, None, None
+
+    if data.get("ok") is False:
+        return False, None, data.get("error", "unknown Jira API error")
+
+    return True, data.get("key"), None
+
+
 def _is_slack_user_id(channel_id: str) -> bool:
     """Return True if channel_id looks like a Slack user ID (U...) rather than a channel ID (C/D/G...)."""
     if not channel_id or not isinstance(channel_id, str):
@@ -253,6 +392,45 @@ class MCPDispatcher:
             base = {**base, **overrides}
         return base
 
+    def _build_server_spec(self, name: str, cfg: dict) -> dict:
+        """
+        Build the langchain-mcp-adapters server spec entry for one server.
+
+        Two normalizations are applied so Python-based MCP servers work correctly
+        regardless of how the API process was started:
+
+        1. command="python" is replaced with sys.executable — the interpreter that
+           is currently running the API — so the MCP subprocess uses the same venv
+           and has access to the same installed packages (mcp, httpx, etc.).
+
+        2. Relative paths in args are resolved to absolute paths anchored to the
+           project root (the directory containing mcp_config.json), so the subprocess
+           can be launched from any working directory.
+        """
+        _project_root = _MCP_CONFIG_PATH.parent
+        command = cfg.get("command", "npx")
+        if command == "python":
+            command = sys.executable
+
+        args = []
+        for arg in cfg.get("args", []):
+            # Resolve relative args to absolute only when the resolved path exists on
+            # disk (i.e. it's a real local script like src/mcp_servers/jira_server.py).
+            # Package specifiers (e.g. @scope/pkg) and flags (-y) are left unchanged.
+            if not arg.startswith("-") and not Path(arg).is_absolute():
+                resolved = _project_root / arg
+                if resolved.exists():
+                    args.append(str(resolved))
+                    continue
+            args.append(arg)
+
+        return {
+            "command": command,
+            "args": args,
+            "env": self._resolve_server_env(name),
+            "transport": "stdio",
+        }
+
     # ------------------------------------------------------------------
     # Public interface
     # ------------------------------------------------------------------
@@ -262,17 +440,30 @@ class MCPDispatcher:
         server_name: str,
         mcp_tool_name: str,
         params: dict[str, Any],
+        *,
+        validate: bool = True,
     ) -> tuple[dict[str, Any], Optional[str]]:
         """
-        Apply allowlist and server-specific param validation/mapping.
+        Apply allowlist and (optionally) server-specific param validation/mapping.
+
+        validate=False skips param mapping/validation — used in dry-run mode where
+        some params (e.g. project_key for Jira) are not available until execute time.
+
         Returns (params_to_use, error_message). If error is set, params_to_use
         may still be the mapped params for logging.
         """
         allow_err = self._check_allowlist(server_name, mcp_tool_name)
         if allow_err:
             return (params, allow_err)
+        if not validate:
+            return (params, None)
         if server_name == "slack" and mcp_tool_name == "slack_post_message":
             mapped, val_err = _validate_and_map_slack_params(params)
+            if val_err:
+                return (mapped, val_err)
+            return (mapped, None)
+        if server_name == "jira" and mcp_tool_name == "jira_create_issue":
+            mapped, val_err = _validate_and_map_jira_params(params)
             if val_err:
                 return (mapped, val_err)
             return (mapped, None)
@@ -303,8 +494,10 @@ class MCPDispatcher:
         server_cfg = self._servers.get(server_name, {})
         mcp_tool_name: str = server_cfg.get("_mcpTool", tool_type)
 
+        # In dry-run, skip param validation — some params (e.g. Jira project_key)
+        # are supplied at execute time, not at pipeline preview time.
         params_to_use, sandbox_err = self._sandbox_params(
-            server_name, mcp_tool_name, params
+            server_name, mcp_tool_name, params, validate=not self.dry_run
         )
         result_params = (
             _slack_result_params(params_to_use, params)
@@ -345,8 +538,10 @@ class MCPDispatcher:
         server_cfg = self._servers.get(server_name, {})
         mcp_tool_name: str = server_cfg.get("_mcpTool", tool_type)
 
+        # Dry-run: allowlist check only, no param validation. Some params
+        # (e.g. Jira project_key) are supplied at execute time, not pipeline time.
         params_to_use, sandbox_err = self._sandbox_params(
-            server_name, mcp_tool_name, params
+            server_name, mcp_tool_name, params, validate=False
         )
         result_params = (
             _slack_result_params(params_to_use, params)
@@ -399,14 +594,19 @@ class MCPDispatcher:
                 for a in actions
             ]
 
-        server_spec: dict = {}
-        for name, cfg in self._servers.items():
-            server_spec[name] = {
-                "command": cfg.get("command", "npx"),
-                "args": cfg.get("args", []),
-                "env": self._resolve_server_env(name),
-                "transport": "stdio",
-            }
+        # Only start servers that are actually needed for this batch of actions.
+        # Starting unneeded servers wastes resources and can cause the whole
+        # gather to fail if an unrelated server has a startup error.
+        needed_servers: set[str] = {
+            self._tool_type_map.get(a.get("tool_type", ""))
+            for a in actions
+        } - {None, ""}  # type: ignore[operator]
+
+        server_spec: dict = {
+            name: self._build_server_spec(name, cfg)
+            for name, cfg in self._servers.items()
+            if name in needed_servers
+        }
 
         results: list[dict[str, Any]] = []
         client = MultiServerMCPClient(server_spec)
@@ -491,6 +691,26 @@ class MCPDispatcher:
                         else:
                             results.append(self._result(
                                 action_id, tool_type, server_name, mcp_tool_name, result_params,
+                                status="success", response=response, error=None,
+                            ))
+                    elif server_name == "jira":
+                        logger.info(
+                            "Jira MCP response for action %s: %s",
+                            action_id,
+                            json.dumps(response, default=str),
+                        )
+                        jira_ok, issue_key, jira_err = _parse_jira_mcp_response(response)
+                        if not jira_ok and jira_err:
+                            results.append(self._result(
+                                action_id, tool_type, server_name, mcp_tool_name, result_params,
+                                status="error", response=response, error=f"Jira API error: {jira_err}",
+                            ))
+                        else:
+                            out_params = dict(result_params)
+                            if issue_key:
+                                out_params["issue_key"] = issue_key
+                            results.append(self._result(
+                                action_id, tool_type, server_name, mcp_tool_name, out_params,
                                 status="success", response=response, error=None,
                             ))
                     else:
@@ -581,12 +801,7 @@ class MCPDispatcher:
             )
 
         server_spec = {
-            server_name: {
-                "command": server_cfg.get("command", "npx"),
-                "args": server_cfg.get("args", []),
-                "env": self._resolve_server_env(server_name),
-                "transport": "stdio",
-            }
+            server_name: self._build_server_spec(server_name, server_cfg)
         }
 
         client = MultiServerMCPClient(server_spec)
@@ -638,6 +853,22 @@ class MCPDispatcher:
                         response=response,
                         error=f"Slack API error: {slack_err}",
                     )
+            elif server_name == "jira":
+                logger.info(
+                    "Jira MCP response for action %s: %s",
+                    action_id,
+                    json.dumps(response, default=str),
+                )
+                jira_ok, issue_key, jira_err = _parse_jira_mcp_response(response)
+                if not jira_ok and jira_err:
+                    return self._result(
+                        action_id, tool_type, server_name, mcp_tool_name, out_params,
+                        status="error",
+                        response=response,
+                        error=f"Jira API error: {jira_err}",
+                    )
+                if issue_key:
+                    out_params = {**out_params, "issue_key": issue_key}
             return self._result(
                 action_id, tool_type, server_name, mcp_tool_name, out_params,
                 status="success",

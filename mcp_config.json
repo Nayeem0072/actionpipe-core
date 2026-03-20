@@ -12,13 +12,26 @@
         "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
         "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
       }
+    },
+    "jira": {
+      "_toolType": "create_jira_task",
+      "_mcpTool": "jira_create_issue",
+      "command": "python",
+      "args": ["src/mcp_servers/jira_server.py"],
+      "_comment_env": "JIRA_ACCESS_TOKEN and JIRA_CLOUD_ID are injected at runtime from user_tokens via server_env_overrides. The values below are fallbacks for CLI/dry-run use only.",
+      "env": {
+        "JIRA_ACCESS_TOKEN": "${JIRA_ACCESS_TOKEN}",
+        "JIRA_CLOUD_ID": "${JIRA_CLOUD_ID}"
+      }
     }
   },
   "toolTypeToServer": {
     "send_notification": "slack",
+    "create_jira_task":  "jira",
     "general_task":      null
   },
   "allowedTools": {
-    "slack": ["slack_post_message"]
+    "slack": ["slack_post_message"],
+    "jira":  ["jira_create_issue", "jira_update_issue"]
   }
 }
