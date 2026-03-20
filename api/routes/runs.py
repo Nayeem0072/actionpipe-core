@@ -3,15 +3,19 @@ Runs API: create pipeline runs (upload + details) and stream progress via SSE.
 
   POST /runs       — Create run (multipart: file, meetingDate, language), return runId + streamUrl.
   GET  /runs/{id}/stream — SSE stream for extractor → normalizer → executor progress.
-  POST /runs/{id}/actions/execute — Execute selected Slack actions from a completed run.
+  POST /runs/{id}/actions/execute      — Execute selected Slack actions from a completed run.
+  POST /runs/{id}/jira_actions/execute — Execute selected Jira actions from a completed run.
 """
 import asyncio
 import json
+import logging
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Annotated, Any, AsyncGenerator
+from typing import Annotated, Any, AsyncGenerator, Optional
+
+import httpx
 
 import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -24,6 +28,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.auth import UserDetails, get_user_details
 from api.db import get_db
 from api.models import AgentRunTask, RunRequestLog, RunResponseLog, UserToken
+
+logger = logging.getLogger(__name__)
 
 MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024  # 15 MB
 ALLOWED_EXTENSIONS = {".csv", ".txt", ".doc", ".pdf"}
@@ -416,6 +422,256 @@ async def execute_run_actions(
     dispatcher = MCPDispatcher(
         dry_run=False,
         server_env_overrides=server_env_overrides if server_env_overrides else None,
+    )
+    results = await dispatcher.dispatch_all(actions_for_dispatch)
+
+    return {"executor_actions": results}
+
+
+# ---------------------------------------------------------------------------
+# Jira token refresh helper
+# ---------------------------------------------------------------------------
+
+_ATLASSIAN_TOKEN_URL = "https://auth.atlassian.com/oauth/token"
+# Refresh if the token expires within this window
+_JIRA_REFRESH_WINDOW_SECONDS = 300
+
+
+async def _refresh_jira_token_if_needed(
+    token_row: UserToken, db: AsyncSession
+) -> Optional[str]:
+    """
+    Refresh the user's Jira OAuth access token if it is expired or about to expire
+    within the next _JIRA_REFRESH_WINDOW_SECONDS seconds.
+
+    Updates token_row.access_token and token_row.expires_at in-place and commits
+    the change to the DB.
+
+    Returns the (possibly refreshed) access token, or None if the refresh failed
+    and the existing token may still be valid.
+    """
+    if not token_row.refresh_token:
+        logger.warning("Jira token row has no refresh_token; using existing access token as-is")
+        return token_row.access_token
+
+    now = datetime.now(timezone.utc)
+    expires_at = token_row.expires_at
+    if expires_at and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if expires_at and (expires_at - now).total_seconds() > _JIRA_REFRESH_WINDOW_SECONDS:
+        return token_row.access_token
+
+    client_id = os.environ.get("JIRA_CLIENT_ID", "")
+    client_secret = os.environ.get("JIRA_CLIENT_SECRET", "")
+    if not client_id or not client_secret:
+        logger.warning("JIRA_CLIENT_ID / JIRA_CLIENT_SECRET not set; skipping token refresh")
+        return token_row.access_token
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
+                _ATLASSIAN_TOKEN_URL,
+                json={
+                    "grant_type": "refresh_token",
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "refresh_token": token_row.refresh_token,
+                },
+            )
+
+        if resp.status_code != 200:
+            logger.error(
+                "Jira token refresh failed (HTTP %s): %s",
+                resp.status_code,
+                resp.text[:300],
+            )
+            return token_row.access_token
+
+        data = resp.json()
+        if "error" in data:
+            logger.error("Jira token refresh error: %s — %s", data["error"], data.get("error_description"))
+            return token_row.access_token
+
+        new_access_token: str = data["access_token"]
+        expires_in: int = data.get("expires_in", 3600)
+        new_expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+
+        token_row.access_token = new_access_token
+        token_row.expires_at = new_expires_at
+        if data.get("refresh_token"):
+            token_row.refresh_token = data["refresh_token"]
+
+        await db.commit()
+        logger.info("Refreshed Jira access token for user %s", token_row.user_id)
+        return new_access_token
+
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Jira token refresh exception: %s; using existing token", exc)
+        return token_row.access_token
+
+
+# ---------------------------------------------------------------------------
+# POST /runs/{run_id}/jira_actions/execute
+# ---------------------------------------------------------------------------
+
+
+class ExecuteJiraActionsBody(BaseModel):
+    """Request body for executing selected Jira actions from a run."""
+
+    actionIds: list[str] = Field(
+        ..., min_length=1, description="Action IDs from executor_actions to execute (Jira only)"
+    )
+    projectKey: Optional[str] = Field(
+        default=None,
+        description=(
+            "Jira project key to create issues in (e.g. 'ENG', 'PROJ'). "
+            "Takes precedence over the project_key stored in your Jira token settings. "
+            "Required if no default project key has been saved for your account."
+        ),
+    )
+
+
+@router.post("/{run_id}/jira_actions/execute")
+async def execute_jira_run_actions(
+    run_id: str,
+    body: ExecuteJiraActionsBody,
+    user_details: Annotated[UserDetails, Depends(get_user_details)],
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Execute selected Jira actions from a completed run.
+
+    Loads the run's stored executor_actions, filters to Jira (create_jira_task)
+    actions whose id is in actionIds, then invokes the Jira MCP server for each
+    using the user's stored OAuth access token. Returns per-action results.
+
+    The user must have connected their Jira account via /jira/connect before calling
+    this endpoint.
+    """
+    # 1. Resolve run_id -> RunRequestLog, ensure user owns the run
+    request_result = await db.execute(
+        select(RunRequestLog).where(
+            RunRequestLog.run_id == run_id,
+            RunRequestLog.user_id == user_details.user.id,
+        )
+    )
+    request_log = request_result.scalars().first()
+    if not request_log:
+        raise HTTPException(status_code=404, detail="Run not found or access denied")
+
+    # 2. Load latest completed run response
+    response_result = await db.execute(
+        select(RunResponseLog)
+        .where(
+            RunResponseLog.request_id == request_log.id,
+            RunResponseLog.status == "completed",
+        )
+        .order_by(RunResponseLog.created_at.desc())
+        .limit(1)
+    )
+    response_log = response_result.scalars().first()
+    if not response_log or not response_log.response_data:
+        raise HTTPException(
+            status_code=404,
+            detail="Run has no completed response yet; wait for the pipeline to finish",
+        )
+
+    executor_actions = response_log.response_data.get("executor_actions") or []
+    if not isinstance(executor_actions, list):
+        raise HTTPException(status_code=500, detail="Invalid run response data")
+
+    # 3. Filter to requested Jira actions
+    action_ids_set = set(body.actionIds)
+    jira_actions = [
+        a for a in executor_actions
+        if isinstance(a, dict)
+        and a.get("id") in action_ids_set
+        and (a.get("server") == "jira" or a.get("tool_type") == "create_jira_task")
+    ]
+    found_ids = {a["id"] for a in jira_actions}
+    missing = action_ids_set - found_ids
+    if missing:
+        all_ids = {a.get("id") for a in executor_actions if isinstance(a, dict) and a.get("id")}
+        not_found = missing - all_ids
+        if not_found:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown action id(s): {sorted(not_found)}",
+            )
+        non_jira = missing & all_ids
+        raise HTTPException(
+            status_code=400,
+            detail=f"Only Jira actions can be executed here. Non-Jira action id(s): {sorted(non_jira)}",
+        )
+
+    # 4. Fetch and (if needed) refresh the user's Jira token
+    token_result = await db.execute(
+        select(UserToken).where(
+            UserToken.user_id == user_details.user.id,
+            UserToken.service == "jira",
+        )
+    )
+    jira_token_row = token_result.scalars().first()
+    if not jira_token_row or not jira_token_row.access_token:
+        raise HTTPException(
+            status_code=403,
+            detail="Jira is not connected. Connect your Atlassian account first via /jira/connect.",
+        )
+
+    access_token = await _refresh_jira_token_if_needed(jira_token_row, db)
+    if not access_token:
+        raise HTTPException(
+            status_code=403,
+            detail="Could not obtain a valid Jira access token. Please reconnect via /jira/connect.",
+        )
+
+    meta = jira_token_row.meta or {}
+    cloud_id = meta.get("cloud_id", "")
+    if not cloud_id:
+        raise HTTPException(
+            status_code=422,
+            detail="Jira cloud_id is missing from your token metadata. Please reconnect via /jira/connect.",
+        )
+
+    # Resolve project_key: request body > user_tokens.meta > error
+    project_key = (
+        (body.projectKey or "").strip().upper()
+        or (meta.get("project_key") or "").strip().upper()
+    )
+    if not project_key:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "A Jira project key is required. Supply it as 'projectKey' in the request body "
+                "or save a default via PATCH /jira/settings."
+            ),
+        )
+
+    # 5. Build action list for MCPDispatcher, injecting project_key into each action's tool_params
+    actions_for_dispatch = [
+        {
+            "id": a["id"],
+            "tool_type": a.get("tool_type", "create_jira_task"),
+            "tool_params": {**a.get("params", {}), "project_key": project_key},
+        }
+        for a in jira_actions
+    ]
+
+    # 6. Inject credentials via server_env_overrides
+    server_env_overrides: dict[str, dict[str, str]] = {
+        "jira": {
+            "JIRA_ACCESS_TOKEN": access_token,
+            "JIRA_CLOUD_ID": cloud_id,
+        }
+    }
+
+    # 7. Dispatch via MCP (param validation and sandboxing applied inside MCPDispatcher)
+    from src.action_executor.mcp_clients import MCPDispatcher
+
+    dispatcher = MCPDispatcher(
+        dry_run=False,
+        server_env_overrides=server_env_overrides,
     )
     results = await dispatcher.dispatch_all(actions_for_dispatch)
 
